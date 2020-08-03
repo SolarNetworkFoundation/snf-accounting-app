@@ -64,6 +64,8 @@ subprojects {
 
 		checkstyleVersion = '8.34'
         jacksonVersion = '2.10.1'
+        javaxAnnotationVersion = '1.3.2'
+        myBatisStarterVersion = '2.1.3'
         postgresJdbcVersion = '42.2.14'
         slf4jVersion = '1.7.30'
         sshShellVersion = '1.3.0'

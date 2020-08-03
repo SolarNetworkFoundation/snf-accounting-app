@@ -6,6 +6,7 @@ plugins {
 }
 
 apply plugin: 'checkstyle'
+apply plugin: 'java'
 apply plugin: 'io.spring.dependency-management'
 
 description = 'SNF Accounting: Common'
@@ -23,8 +24,22 @@ dependencyManagement {
 	}
 }
 
+configurations {
+	all*.exclude group: 'org.apache.commons', module: 'commons-compress'
+	all*.exclude group: 'org.apache.tomcat', module: 'tomcat-jdbc'
+	all*.exclude group: 'org.eclipse.virgo.mirrored'
+	all*.exclude group: 'org.springframework', module: 'spring-messaging'
+	all*.exclude group: 'org.springframework', module: 'spring-websocket'
+	all*.exclude group: 'javax.servlet'
+	all*.exclude group: 'javax.servlet.jsp'
+	all*.exclude group: 'net.sf.supercsv'
+	all*.exclude group: 'net.solarnetwork.common', module: 'net.solarnetwork.common.web'
+	all*.exclude group: 'net.solarnetwork.central', module: 'net.solarnetwork.central.common.security'
+}
+
 dependencies {
 	// Spring
+	implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${myBatisStarterVersion}"
 	implementation 'org.springframework:spring-context'
 	implementation 'org.springframework:spring-jdbc'
 	implementation 'org.springframework:spring-tx'
@@ -36,11 +51,16 @@ dependencies {
 	implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
 	implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
 	implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+	
+	// SN
+	implementation "net.solarnetwork.central:net.solarnetwork.central.common.dao.mybatis:2.6.0"
+	implementation "net.solarnetwork.central:net.solarnetwork.central.user.billing.snf:1.0.1"
 
 	// Utilities
 	implementation 'org.slf4j:slf4j-api:1.7.26'
 	
 	// Testing
+	testImplementation "org.mybatis.spring.boot:mybatis-spring-boot-starter-test:${myBatisStarterVersion}"
 	testImplementation 'ch.qos.logback:logback-classic:1.2.3'
 }
 

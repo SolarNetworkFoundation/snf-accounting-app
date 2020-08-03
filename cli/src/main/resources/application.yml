@@ -8,6 +8,15 @@ logging:
     console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
 
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+    mapper-locations:
+      - "classpath:org/snf/accounting/dao/mybatis/map/Address.xml"
+      - "classpath:org/snf/accounting/dao/mybatis/map/Account.xml"
+
 spring:
   datasource:
     hikari:
@@ -15,6 +24,11 @@ spring:
       connectionTimeout: 30000
       idleTimeout: 600000
       maxLifetime: 1800000
+    url: jdbc:postgresql://localhost:5496/solarnetwork
+    username: solarnet
+    password: solarnet
+    platform: postgres
+    initialize: false
 
 ssh:
   shell:
@@ -43,9 +57,3 @@ logging:
 
 spring:
   profiles: development
-  datasource:
-    url: jdbc:postgresql://localhost:5496/solarnetwork
-    username: solarnet
-    password: solarnet
-    platform: postgres
-    initialize: false
