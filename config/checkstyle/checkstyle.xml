@@ -124,7 +124,10 @@
     <module name="OverloadMethodsDeclarationOrder"/>
     <module name="VariableDeclarationUsageDistance"/>
     <module name="MethodParamPad"/>
-    <module name="ParenPad"/>
+    <module name="ParenPad">
+      <property name="tokens" value="LITERAL_DO , LITERAL_FOR , LITERAL_IF , LITERAL_SWITCH , LITERAL_WHILE"/>
+  	  <property name="option" value="space"/>
+    </module>
     <module name="OperatorWrap">
       <property name="option" value="NL"/>
       <property name="tokens" value="BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR, LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF "/>
