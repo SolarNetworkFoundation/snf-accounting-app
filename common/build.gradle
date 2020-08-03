@@ -1,0 +1,57 @@
+plugins {
+    id 'checkstyle'
+    id 'java'
+    id 'eclipse'
+    id 'org.springframework.boot' version '2.3.2.RELEASE' apply false
+}
+
+apply plugin: 'checkstyle'
+apply plugin: 'io.spring.dependency-management'
+
+description = 'SNF Accounting: Common'
+version = '0.1.0'
+archivesBaseName = 'snf-accounting-common'
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+
+dependencyManagement {
+	imports {
+		mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+	}
+}
+
+dependencies {
+	// Spring
+	implementation 'org.springframework:spring-context'
+	implementation 'org.springframework:spring-jdbc'
+	implementation 'org.springframework:spring-tx'
+	
+	// DB
+	runtime "org.postgresql:postgresql:${postgresJdbcVersion}"
+
+	// JSON
+	implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+	implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+	implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+
+	// Utilities
+	implementation 'org.slf4j:slf4j-api:1.7.26'
+	
+	// Testing
+	testImplementation 'ch.qos.logback:logback-classic:1.2.3'
+}
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+jar.manifest {
+    attributes('Implementation-Version': version)
+}
+

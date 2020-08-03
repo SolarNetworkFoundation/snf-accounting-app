@@ -1,0 +1,51 @@
+app:
+# TODO
+
+logging:
+  level:
+    ROOT: INFO
+  pattern:
+    console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+    file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+
+spring:
+  datasource:
+    hikari:
+      minimumIdle: 0
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+
+ssh:
+  shell:
+    enabled: true
+    authentication: security
+    auth-provider-bean-name: snfAuthProvider
+    authorized-public-keys-file: authorized_keys
+    host: 0.0.0.0
+    port: 9022
+    prompt:
+      color: blue
+      text: '> '
+    shared-history: false
+    default-commands:
+      jvm: false
+      manage-sessions: false
+      thread: false
+
+---
+debugMode: true
+
+logging:
+  level:
+    com.github.fonimus: DEBUG
+    org.springframework.boot.autoconfigure: INFO
+
+spring:
+  profiles: development
+  datasource:
+    url: jdbc:postgresql://localhost:5496/solarnetwork
+    username: solarnet
+    password: solarnet
+    platform: postgres
+    initialize: false

@@ -1,0 +1,9 @@
+rootProject.name = 'snf-accounting'
+
+include "common"
+include "common-cli"
+include "cli"
+
+project(':common').name = "snf-accounting-common"
+project(':common-cli').name = "snf-accounting-common-cli"
+project(':cli').name = "snf-accounting-cli"

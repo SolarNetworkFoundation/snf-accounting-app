@@ -1,0 +1,145 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+}
+
+subprojects {
+    apply plugin: "checkstyle"
+    apply plugin: "java"
+    apply plugin: "maven-publish"
+
+    group = "org.snf.accounting"
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven { url "https://dev.solarnetwork.net/archive/repository/solarnetwork-stage/" }
+    }
+
+    [
+        compileJava,
+        compileTestJava
+    ].each() {
+        it.options.compilerArgs += [
+            "-Xlint:all",
+            "-Xlint:-options",
+            "-Xlint:-path",
+            "-Xlint:-try"
+        ]
+        it.options.encoding = "UTF-8"
+        if (rootProject.hasProperty('failOnWarnings') && rootProject.failOnWarnings.toBoolean()) {
+            it.options.compilerArgs += ["-Werror"]
+        }
+    }
+
+    compileTestJava {
+        options.compilerArgs += [
+            "-Xlint:-serial"
+        ]
+    }
+
+    jar.manifest {
+        attributes('Implementation-Title': name,
+        'Implementation-Version': version,
+        'Built-By': System.getProperty('user.name'),
+        'Built-JDK': System.getProperty('java.version'),
+        'Source-Compatibility': sourceCompatibility,
+        'Target-Compatibility': targetCompatibility)
+    }
+
+    javadoc.options {
+        encoding = 'UTF-8'
+        use = true
+        links 'https://docs.oracle.com/javase/8/docs/api/'
+        source = "8"
+    }
+
+    ext {
+
+		checkstyleVersion = '8.34'
+        jacksonVersion = '2.10.1'
+        postgresJdbcVersion = '42.2.14'
+        slf4jVersion = '1.7.30'
+        sshShellVersion = '1.3.0'
+        wordWrapVersion = '0.1.6'
+
+        libraries = [
+            // Test dependencies.
+            hamcrest: 'org.hamcrest:hamcrest-library:1.3',
+            junit: 'junit:junit:4.12',
+            mockito: 'org.mockito:mockito-core:2.25.1'
+        ]
+    }
+
+    dependencies {
+        testImplementation libraries.junit,
+        		libraries.hamcrest,
+                libraries.mockito
+    }
+
+    // Disable JavaDoc doclint on Java 8. It's annoying.
+    if (JavaVersion.current().isJava8Compatible()) {
+        allprojects {
+            tasks.withType(Javadoc) {
+                options.addStringOption('Xdoclint:none', '-quiet')
+            }
+        }
+    }
+
+    // For jdk10 we must explicitly choose between html4 and html5, otherwise we get a warning
+    if (JavaVersion.current().isJava10Compatible()) {
+        allprojects {
+            tasks.withType(Javadoc) {
+                options.addBooleanOption('html5', true)
+            }
+        }
+    }
+
+    checkstyle {
+        toolVersion = "8.34"
+		configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+        ignoreFailures = false
+        if (rootProject.hasProperty("checkstyle.ignoreFailures")) {
+            ignoreFailures = rootProject.properties["checkstyle.ignoreFailures"].toBoolean()
+        }
+    }
+
+    checkstyleMain {
+        source = fileTree(dir: "src/main", include: "**/*.java")
+    }
+
+    checkstyleTest {
+        source = fileTree(dir: "src/test", include: "**/*.java")
+    }
+
+    task javadocJar(type: Jar) {
+        from javadoc
+        classifier = 'javadoc'
+        archiveClassifier = 'javadoc'
+    }
+
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allSource
+        classifier = 'sources'
+        archiveClassifier = 'sources'
+    }
+
+    // At a test failure, log the stack trace to the console so that we don't
+    // have to open the HTML in a browser.
+    test {
+        testLogging {
+            exceptionFormat = 'full'
+            showExceptions true
+            showCauses true
+            showStackTraces true
+        }
+        maxHeapSize = '1500m'
+    }
+    
+}
