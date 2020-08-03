@@ -22,9 +22,22 @@
 
 package org.snf.accounting.cli.app.impl;
 
-import org.snf.accounting.cli.BaseShellSupport;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
 
+import org.snf.accounting.cli.BaseShellSupport;
+import org.snf.accounting.cli.app.service.AccountService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.shell.standard.ShellCommandGroup;
+import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.table.SimpleHorizontalAligner;
+
+import com.github.fonimus.ssh.shell.SimpleTable;
+import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilder;
 import com.github.fonimus.ssh.shell.SshShellHelper;
+import com.github.fonimus.ssh.shell.commands.SshShellComponent;
+
+import net.solarnetwork.central.user.billing.snf.domain.Account;
 
 /**
  * Commands for accounts.
@@ -32,14 +45,53 @@ import com.github.fonimus.ssh.shell.SshShellHelper;
  * @author matt
  * @version 1.0
  */
+@SshShellComponent
+@ShellCommandGroup("Accounts")
 public class AccountCommands extends BaseShellSupport {
 
+  private final AccountService accountService;
+
   /**
+   * Constructor.
+   * 
    * @param shell
+   *          the shell
+   * @param accountService
+   *          the account service
    */
-  public AccountCommands(SshShellHelper shell) {
+  @Autowired
+  public AccountCommands(SshShellHelper shell, AccountService accountService) {
     super(shell);
-    // TODO Auto-generated constructor stub
+    this.accountService = accountService;
+  }
+
+  /**
+   * List the available accounts.
+   */
+  @ShellMethod("Show the available accounts.")
+  public void accountsShow() {
+    Iterable<Account> accounts = accountService.allAccounts();
+    // @formatter:off
+    SimpleTableBuilder t = SimpleTable.builder()
+        .column("ID")
+        .column("User ID")
+        .column("Info")
+        .column("Curr")
+        .column("Time Zone")
+        .headerAligner(SimpleHorizontalAligner.left)
+        .lineAligner(SimpleHorizontalAligner.left)
+        ;
+    for (Account account : accounts) {
+      t.line(asList(
+          account.getId().getId(),
+          account.getUserId(),
+          format("%s\n%s", account.getAddress().getName(), account.getAddress().getEmail()),
+          account.getCurrencyCode(),
+          account.getAddress().getTimeZoneId()
+          ));
+    }
+    shell.print(shell.renderTable(t.build()));
+    // @formatter:on
   }
 
 }

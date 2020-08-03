@@ -43,6 +43,18 @@
     <association property="address" resultMap="org.snf.accounting.dao.mybatis.Address.Address-FullResult"/>
   </resultMap>
   
+  <select id="findall-Account" resultMap="Account-FullResult">
+    SELECT
+      <include refid="fragment-Account-full-result"/>,
+      <include refid="org.snf.accounting.dao.mybatis.Address.fragment-Address-full-result"/>
+    FROM
+      solarbill.bill_account acct
+    INNER JOIN
+      solarbill.bill_address addr ON addr.id = acct.addr_id
+    ORDER BY
+      acct.id
+  </select>
+  
   <select id="get-Account-for-id" parameterType="long" resultMap="Account-FullResult">
     SELECT
       <include refid="fragment-Account-full-result"/>,

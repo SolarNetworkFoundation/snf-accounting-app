@@ -14,9 +14,7 @@ mybatis:
     map-underscore-to-camel-case: true
     default-fetch-size: 100
     default-statement-timeout: 30
-    mapper-locations:
-      - "classpath:org/snf/accounting/dao/mybatis/map/Address.xml"
-      - "classpath:org/snf/accounting/dao/mybatis/map/Account.xml"
+  mapper-locations: "classpath:org/snf/accounting/dao/mybatis/map/*.xml"
 
 spring:
   datasource:
