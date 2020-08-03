@@ -99,7 +99,7 @@ public class SimpleUserDetailsService implements UserDetailsService {
     if (user == null) {
       throw new UsernameNotFoundException("User not available.");
     }
-    return user;
+    return User.withUserDetails(user).build();
   }
 
 }
