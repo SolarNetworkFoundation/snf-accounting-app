@@ -31,6 +31,8 @@ import java.util.WeakHashMap;
 
 import javax.validation.ValidatorFactory;
 
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.session.ServerSession;
 import org.jline.reader.Parser;
 import org.springframework.boot.Banner;
 import org.springframework.context.annotation.Primary;
@@ -63,6 +65,11 @@ public class TrackingSshShellCommandFactory extends SshShellCommandFactory {
 
   private static final Map<SshContext, Boolean> SSH_CONTEXTS = new WeakHashMap<>(4, 0.9f);
 
+  // CHECKSTYLE OFF: LineLength
+  private static final Map<ServerSession, org.apache.sshd.server.Environment> SSH_ENVIRONMENTS = new WeakHashMap<>(
+      4, 0.9f);
+  // CHECKSTYLE ON: LineLength
+
   /**
    * Constructor.
    * 
@@ -88,6 +95,12 @@ public class TrackingSshShellCommandFactory extends SshShellCommandFactory {
       Environment environment, SshShellProperties properties) {
     super(shellListenerService, banner, promptProvider, new TrackingShell(shell), completerAdapter,
         parser, environment, properties);
+  }
+
+  @Override
+  public void start(ChannelSession channelSession, org.apache.sshd.server.Environment env) {
+    super.start(channelSession, env);
+    SSH_ENVIRONMENTS.put(channelSession.getServerSession(), env);
   }
 
   private static final class TrackingShell extends Shell {
@@ -159,6 +172,22 @@ public class TrackingSshShellCommandFactory extends SshShellCommandFactory {
       });
       return contexts;
     }
+  }
+
+  /**
+   * Get the active SSH environment.
+   * 
+   * @return the active SSH environment
+   */
+  public static org.apache.sshd.server.Environment sshEnvironment() {
+    SshContext ctx = SSH_THREAD_CONTEXT.get();
+    if (ctx != null) {
+      ServerSession sess = ctx.getSshSession();
+      if (sess != null) {
+        return SSH_ENVIRONMENTS.get(sess);
+      }
+    }
+    return null;
   }
 
 }

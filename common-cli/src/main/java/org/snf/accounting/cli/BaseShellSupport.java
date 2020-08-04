@@ -355,8 +355,8 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
    * @return the locale
    */
   protected Locale actorLocale() {
-    // TODO: way to get the logged in user's locale?
-    return DEFAULT_LOCALE;
+    Locale l = ShellUtils.clientLocale();
+    return (l != null ? l : DEFAULT_LOCALE);
   }
 
 }
