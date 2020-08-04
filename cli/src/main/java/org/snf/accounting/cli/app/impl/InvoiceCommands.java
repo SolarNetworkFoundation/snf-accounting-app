@@ -28,6 +28,8 @@ import static java.util.Arrays.asList;
 import static net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem.DEFAULT_ITEM_ORDER;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -116,6 +118,7 @@ public class InvoiceCommands extends BaseShellSupport {
       shell.printError(format("Invoice %d not found.", invoiceId));
     }
     Locale locale = actorLocale();
+    NumberFormat numFormat = DecimalFormat.getNumberInstance(locale);
     InvoiceImpl invoice = new InvoiceImpl(inv);
     LocalizedInvoice locInvoice = new LocalizedInvoice(invoice, locale);
     // @formatter:off
@@ -150,7 +153,7 @@ public class InvoiceCommands extends BaseShellSupport {
               nodeId != null ? nodeId : "",
               itm.getId(),
               itm.getKey(),
-              usage != null ? usage.getAmount() : "",
+              usage != null ? numFormat.format(usage.getAmount()) : "",
               formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
                   invoice.getCurrencyCode(), itm.getAmount())
               ));
