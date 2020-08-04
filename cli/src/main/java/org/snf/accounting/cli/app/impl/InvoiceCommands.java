@@ -27,7 +27,9 @@ import static java.time.format.DateTimeFormatter.ISO_DATE;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem.DEFAULT_ITEM_ORDER;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
+import static org.snf.accounting.cli.ShellUtils.getBold;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -36,19 +38,20 @@ import java.util.function.IntFunction;
 
 import org.snf.accounting.cli.BaseShellSupport;
 import org.snf.accounting.cli.app.service.AccountService;
+import org.snf.accounting.domain.SnfInvoiceWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.shell.table.Aligner;
 
+import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SimpleTable;
 import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilder;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
-import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem;
 import net.solarnetwork.central.user.billing.snf.domain.UsageInfo;
@@ -113,7 +116,7 @@ public class InvoiceCommands extends BaseShellSupport {
    */
   @ShellMethod("Show invoice details.")
   public void invoiceShow(@ShellOption(help = "The invoice ID to show.") Long invoiceId) {
-    SnfInvoice inv = accountService.invoiceForId(invoiceId);
+    SnfInvoiceWithBalance inv = accountService.invoiceForId(invoiceId);
     if (inv == null) {
       shell.printError(format("Invoice %d not found.", invoiceId));
     }
@@ -121,15 +124,22 @@ public class InvoiceCommands extends BaseShellSupport {
     NumberFormat numFormat = DecimalFormat.getNumberInstance(locale);
     InvoiceImpl invoice = new InvoiceImpl(inv);
     LocalizedInvoice locInvoice = new LocalizedInvoice(invoice, locale);
+    BigDecimal due = inv.getDueAmount();
     // @formatter:off
-    shell.print(format("Invoice %d (INV-%s) - %s - %s (%d) - %s - %s", 
+    shell.print(format("Invoice %d (%s) - %s - %s (%d) - %s - %s - %s", 
         inv.getId().getId(), 
-        invoice.getInvoiceNumber(),
+        getBold(format("INV-%s",invoice.getInvoiceNumber())),
         ISO_DATE.format(inv.getStartDate()),
         inv.getAddress().getName(),
         inv.getAccountId(),
         inv.getCurrencyCode(),
-        locInvoice.getLocalizedAmount()));
+        getBold(locInvoice.getLocalizedAmount()),
+        due.compareTo(BigDecimal.ZERO) > 0 
+          ? shell.getColored(
+              format("DUE: %s", formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+                  invoice.getCurrencyCode(), due)),
+              PromptColor.RED)
+          : shell.getColored("PAID", PromptColor.GREEN)));
 
     // @formatter:off
     SimpleTableBuilder t = SimpleTable.builder()
@@ -177,6 +187,17 @@ public class InvoiceCommands extends BaseShellSupport {
             invoice.getCurrencyCode(), 
             invoice.getAmount())
         ));
+    if (due.compareTo(BigDecimal.ZERO) > 0) {
+      t.line(asList(
+          "",
+          "",
+          "Due",
+          "",
+          formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+              invoice.getCurrencyCode(), 
+              due)
+          ));
+    }
     shell.print(shell.renderTable(buildTable(t.build(), new IntFunction<Iterable<Aligner>>() {
 
       @Override
@@ -188,7 +209,8 @@ public class InvoiceCommands extends BaseShellSupport {
   }
 
   private void doInvoiceSearch(SnfInvoiceFilter f) {
-    FilterResults<SnfInvoice, UserLongPK> result = accountService.findFilteredInvoices(f);
+    FilterResults<SnfInvoiceWithBalance, UserLongPK> result = accountService
+        .findFilteredInvoices(f);
     // @formatter:off
     SimpleTableBuilder t = SimpleTable.builder()
         .column("ID")
@@ -196,9 +218,10 @@ public class InvoiceCommands extends BaseShellSupport {
         .column("Date")
         .column("Items")
         .column("Amount")
+        .column("Due")
         ;
     Locale locale = actorLocale();
-    for (SnfInvoice inv : result) {
+    for (SnfInvoiceWithBalance inv : result) {
       InvoiceImpl invoice = new InvoiceImpl(inv);
       t.line(asList(
           inv.getId().getId(),
@@ -206,7 +229,9 @@ public class InvoiceCommands extends BaseShellSupport {
           ISO_DATE.format(inv.getStartDate()),
           inv.getItemCount(),
           formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
-              inv.getCurrencyCode(), inv.getTotalAmount())
+              inv.getCurrencyCode(), inv.getTotalAmount()),
+          formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+              inv.getCurrencyCode(), inv.getTotalAmount().subtract(inv.getPaidAmount()))
           ));
     }
     shell.print(shell.renderTable(buildTable(t.build(), new IntFunction<Iterable<Aligner>>() {

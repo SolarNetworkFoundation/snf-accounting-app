@@ -26,16 +26,17 @@
   </insert>
   
   <sql id="fragment-SnfInvoice-full-result">
-      inv.id       AS bill_invoice_id
-    , inv.created     AS bill_invoice_created
-    , inv.acct_id     AS bill_invoice_acct_id
-    , inv.addr_id     AS bill_invoice_addr_id
+      inv.id           AS bill_invoice_id
+    , inv.created      AS bill_invoice_created
+    , inv.acct_id      AS bill_invoice_acct_id
+    , inv.addr_id      AS bill_invoice_addr_id
     , inv.date_start   AS bill_invoice_date_start
     , inv.date_end     AS bill_invoice_date_end
     , inv.currency     AS bill_invoice_currency
+    , pay.paid_amount  AS bill_invoice_paid_amount
   </sql>
 
-  <resultMap id="SnfInvoice-FullResult" type="net.solarnetwork.central.user.billing.snf.domain.SnfInvoice">
+  <resultMap id="SnfInvoice-FullResult" type="org.snf.accounting.domain.SnfInvoiceWithBalance">
     <constructor>
       <idArg column="bill_invoice_id" javaType="Long"/>
       <arg column="bill_account_user_id" javaType="Long"/>
@@ -45,6 +46,7 @@
     <result property="startDate" column="bill_invoice_date_start"/>
     <result property="endDate" column="bill_invoice_date_end"/>
     <result property="currencyCode" column="bill_invoice_currency"/>
+    <result property="paidAmount" column="bill_invoice_paid_amount"/>
     <association property="address" resultMap="org.snf.accounting.dao.mybatis.Address.Address-FullResult"/>
     <association property="items" notNullColumn="bill_invoice_item_id" resultMap="org.snf.accounting.dao.mybatis.SnfInvoiceItem.SnfInvoiceItem-FullResult"/>
   </resultMap>
@@ -63,6 +65,11 @@
       solarbill.bill_address addr ON addr.id = inv.addr_id
     LEFT OUTER JOIN
       solarbill.bill_invoice_item invi ON invi.inv_id = inv.id
+    LEFT JOIN LATERAL (
+      SELECT SUM(pay.amount) AS paid_amount
+      FROM solarbill.bill_invoice_payment pay
+      WHERE pay.inv_id = inv.id
+      ) pay ON TRUE
     WHERE
       inv.id = #{id}
   </select>
@@ -76,6 +83,11 @@
       solarbill.bill_address addr ON addr.id = inv.addr_id
     LEFT OUTER JOIN
       solarbill.bill_invoice_item invi ON invi.inv_id = inv.id
+    LEFT JOIN LATERAL (
+      SELECT SUM(pay.amount) AS paid_amount
+      FROM solarbill.bill_invoice_payment pay
+      WHERE pay.inv_id = inv.id
+      ) pay ON TRUE
     <if test="unpaidOnly and (offset == null or max == null)">
       INNER JOIN LATERAL (
         WITH paid AS (

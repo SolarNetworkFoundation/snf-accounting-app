@@ -27,6 +27,7 @@ import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
 import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
+import org.snf.accounting.domain.SnfInvoiceWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -34,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
-import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.dao.FilterResults;
@@ -84,17 +84,20 @@ public class DefaultAccountService implements AccountService {
         filter.getMax());
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
-  public FilterResults<SnfInvoice, UserLongPK> findFilteredInvoices(SnfInvoiceFilter filter) {
-    return invoiceDao.findFiltered(filter, filter.getSorts(), filter.getOffset(), filter.getMax());
+  public FilterResults<SnfInvoiceWithBalance, UserLongPK> findFilteredInvoices(
+      SnfInvoiceFilter filter) {
+    return (FilterResults) invoiceDao.findFiltered(filter, filter.getSorts(), filter.getOffset(),
+        filter.getMax());
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
-  public SnfInvoice invoiceForId(Long invoiceId) {
+  public SnfInvoiceWithBalance invoiceForId(Long invoiceId) {
     UserLongPK id = new UserLongPK(null, invoiceId);
-    return invoiceDao.get(id);
+    return (SnfInvoiceWithBalance) invoiceDao.get(id);
   }
 
 }
