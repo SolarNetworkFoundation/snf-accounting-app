@@ -1,7 +1,7 @@
 /* ==================================================================
  * MyBatisSnfInvoiceDao.java - 20/07/2020 9:47:42 AM
  * 
- * Copyright 2020 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork Foundation
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,9 +20,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.central.user.billing.snf.dao.mybatis;
+package org.snf.accounting.dao.mybatis;
 
 import java.util.List;
+
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
@@ -39,76 +40,76 @@ import net.solarnetwork.domain.SortDescriptor;
  * @version 1.0
  */
 public class MyBatisSnfInvoiceDao extends BaseMyBatisGenericDaoSupport<SnfInvoice, UserLongPK>
-		implements SnfInvoiceDao {
+    implements SnfInvoiceDao {
 
-	/** Query name enumeration. */
-	public enum QueryName {
+  /** Query name enumeration. */
+  public enum QueryName {
 
-		FindFiltered("find-SnfInvoice-for-filter");
+    FindFiltered("find-SnfInvoice-for-filter");
 
-		private final String queryName;
+    private final String queryName;
 
-		private QueryName(String queryName) {
-			this.queryName = queryName;
-		}
+    private QueryName(String queryName) {
+      this.queryName = queryName;
+    }
 
-		/**
-		 * Get the query name.
-		 * 
-		 * @return the query name
-		 */
-		public String getQueryName() {
-			return queryName;
-		}
+    /**
+     * Get the query name.
+     * 
+     * @return the query name
+     */
+    public String getQueryName() {
+      return queryName;
+    }
 
-		/**
-		 * Get the query name to use for a count-only result.
-		 * 
-		 * @return the count query name
-		 */
-		public String getCountQueryName() {
-			return queryName + "-count";
-		}
-	}
+    /**
+     * Get the query name to use for a count-only result.
+     * 
+     * @return the count query name
+     */
+    public String getCountQueryName() {
+      return queryName + "-count";
+    }
+  }
 
-	/**
-	 * Constructor.
-	 */
-	public MyBatisSnfInvoiceDao() {
-		super(SnfInvoice.class, UserLongPK.class);
-	}
+  /**
+   * Constructor.
+   */
+  public MyBatisSnfInvoiceDao() {
+    super(SnfInvoice.class, UserLongPK.class);
+  }
 
-	@Override
-	public FilterResults<SnfInvoice, UserLongPK> findFiltered(SnfInvoiceFilter filter,
-			List<SortDescriptor> sorts, Integer offset, Integer max) {
-		if ( offset != null || max != null || sorts != null ) {
-			filter = filter.clone();
-			filter.setSorts(sorts);
-			filter.setMax(max);
-			if ( offset == null ) {
-				// force offset to 0 if implied
-				filter.setOffset(0);
-			} else {
-				filter.setOffset(offset);
-			}
-		}
+  @Override
+  public FilterResults<SnfInvoice, UserLongPK> findFiltered(SnfInvoiceFilter filter,
+      List<SortDescriptor> sorts, Integer offset, Integer max) {
+    if (offset != null || max != null || sorts != null) {
+      filter = filter.clone();
+      filter.setSorts(sorts);
+      filter.setMax(max);
+      if (offset == null) {
+        // force offset to 0 if implied
+        filter.setOffset(0);
+      } else {
+        filter.setOffset(offset);
+      }
+    }
 
-		// attempt count first, if max NOT specified as -1 and NOT a mostRecent query
-		Long totalCount = null;
-		if ( max == null || max.intValue() != -1 ) {
-			SnfInvoiceFilter countFilter = filter.clone();
-			countFilter.setOffset(null);
-			countFilter.setMax(null);
-			Number n = getSqlSession().selectOne(QueryName.FindFiltered.getCountQueryName(),
-					countFilter);
-			if ( n != null ) {
-				totalCount = n.longValue();
-			}
-		}
+    // attempt count first, if max NOT specified as -1 and NOT a mostRecent query
+    Long totalCount = null;
+    if (max == null || max.intValue() != -1) {
+      SnfInvoiceFilter countFilter = filter.clone();
+      countFilter.setOffset(null);
+      countFilter.setMax(null);
+      Number n = getSqlSession().selectOne(QueryName.FindFiltered.getCountQueryName(), countFilter);
+      if (n != null) {
+        totalCount = n.longValue();
+      }
+    }
 
-		List<SnfInvoice> results = selectList(QueryName.FindFiltered.getQueryName(), filter, null, null);
-		return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
-				results.size());
-	}
+    List<SnfInvoice> results = selectList(QueryName.FindFiltered.getQueryName(), filter, null,
+        null);
+    return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
+        results.size());
+  }
 
 }

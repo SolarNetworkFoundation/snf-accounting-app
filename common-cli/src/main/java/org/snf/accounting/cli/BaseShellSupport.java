@@ -66,6 +66,9 @@ import com.github.fonimus.ssh.shell.SshShellHelper;
  */
 public class BaseShellSupport extends BaseMessageSourceSupport {
 
+  /** The default locale to use for the app. */
+  public static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("en-NZ");
+
   /** The shell helper. */
   protected final SshShellHelper shell;
 
@@ -344,6 +347,16 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
       }
     });
     return shell.buildTable(simpleTable);
+  }
+
+  /**
+   * Get the locale of the current actor (logged in user).
+   * 
+   * @return the locale
+   */
+  protected Locale actorLocale() {
+    // TODO: way to get the logged in user's locale?
+    return DEFAULT_LOCALE;
   }
 
 }

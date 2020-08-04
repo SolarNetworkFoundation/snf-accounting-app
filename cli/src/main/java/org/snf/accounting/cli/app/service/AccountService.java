@@ -64,4 +64,13 @@ public interface AccountService {
    */
   FilterResults<SnfInvoice, UserLongPK> findFilteredInvoices(SnfInvoiceFilter filter);
 
+  /**
+   * Get a specific invoice.
+   * 
+   * @param invoiceId
+   *          the ID of the invoice to get
+   * @return the invoice
+   */
+  SnfInvoice invoiceForId(Long invoiceId);
+
 }

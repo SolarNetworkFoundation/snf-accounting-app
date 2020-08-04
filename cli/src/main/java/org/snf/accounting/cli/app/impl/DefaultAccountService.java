@@ -90,4 +90,11 @@ public class DefaultAccountService implements AccountService {
     return invoiceDao.findFiltered(filter, filter.getSorts(), filter.getOffset(), filter.getMax());
   }
 
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public SnfInvoice invoiceForId(Long invoiceId) {
+    UserLongPK id = new UserLongPK(null, invoiceId);
+    return invoiceDao.get(id);
+  }
+
 }

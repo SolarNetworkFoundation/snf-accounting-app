@@ -1,7 +1,7 @@
 /* ==================================================================
  * MyBatisSnfInvoiceItemDao.java - 21/07/2020 3:27:15 PM
  * 
- * Copyright 2020 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork Foundation
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,9 +20,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.central.user.billing.snf.dao.mybatis;
+package org.snf.accounting.dao.mybatis;
 
 import java.util.UUID;
+
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceItemDao;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem;
@@ -34,13 +35,13 @@ import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem;
  * @version 1.0
  */
 public class MyBatisSnfInvoiceItemDao extends BaseMyBatisGenericDaoSupport<SnfInvoiceItem, UUID>
-		implements SnfInvoiceItemDao {
+    implements SnfInvoiceItemDao {
 
-	/**
-	 * Constructor.
-	 */
-	public MyBatisSnfInvoiceItemDao() {
-		super(SnfInvoiceItem.class, UUID.class);
-	}
+  /**
+   * Constructor.
+   */
+  public MyBatisSnfInvoiceItemDao() {
+    super(SnfInvoiceItem.class, UUID.class);
+  }
 
 }
