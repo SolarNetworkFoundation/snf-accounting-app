@@ -26,6 +26,8 @@ import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
 
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
+import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.dao.FilterResults;
 
@@ -52,5 +54,14 @@ public interface AccountService {
    * @return the results, never {@literal null}
    */
   FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter);
+
+  /**
+   * Find invoices.
+   * 
+   * @param filter
+   *          the filter
+   * @return the results, never {@literal null}
+   */
+  FilterResults<SnfInvoice, UserLongPK> findFilteredInvoices(SnfInvoiceFilter filter);
 
 }

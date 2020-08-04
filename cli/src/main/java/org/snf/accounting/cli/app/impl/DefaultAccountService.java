@@ -32,7 +32,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
+import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.dao.FilterResults;
 
@@ -47,6 +50,7 @@ public class DefaultAccountService implements AccountService {
 
   private final AddressDao addressDao;
   private final AccountDao accountDao;
+  private final SnfInvoiceDao invoiceDao;
 
   /**
    * Constructor.
@@ -55,12 +59,16 @@ public class DefaultAccountService implements AccountService {
    *          the address DAO
    * @param accountDao
    *          the account DAO
+   * @param invoiceDao
+   *          the invoice DAO
    */
   @Autowired
-  public DefaultAccountService(AddressDao addressDao, AccountDao accountDao) {
+  public DefaultAccountService(AddressDao addressDao, AccountDao accountDao,
+      SnfInvoiceDao invoiceDao) {
     super();
     this.addressDao = addressDao;
     this.accountDao = accountDao;
+    this.invoiceDao = invoiceDao;
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
@@ -74,6 +82,12 @@ public class DefaultAccountService implements AccountService {
   public FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter) {
     return accountDao.findFilteredBalances(filter, filter.getSorts(), filter.getOffset(),
         filter.getMax());
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public FilterResults<SnfInvoice, UserLongPK> findFilteredInvoices(SnfInvoiceFilter filter) {
+    return invoiceDao.findFiltered(filter, filter.getSorts(), filter.getOffset(), filter.getMax());
   }
 
 }
