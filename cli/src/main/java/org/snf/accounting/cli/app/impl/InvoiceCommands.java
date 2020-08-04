@@ -192,25 +192,28 @@ public class InvoiceCommands extends BaseShellSupport {
     // @formatter:off
     SimpleTableBuilder t = SimpleTable.builder()
         .column("ID")
+        .column("Num")
         .column("Date")
         .column("Items")
         .column("Amount")
         ;
     Locale locale = actorLocale();
-    for (SnfInvoice invoice : result) {
+    for (SnfInvoice inv : result) {
+      InvoiceImpl invoice = new InvoiceImpl(inv);
       t.line(asList(
-          invoice.getId().getId(),
-          ISO_DATE.format(invoice.getStartDate()),
-          invoice.getItemCount(),
+          inv.getId().getId(),
+          format("INV-%s", invoice.getInvoiceNumber()),
+          ISO_DATE.format(inv.getStartDate()),
+          inv.getItemCount(),
           formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
-              invoice.getCurrencyCode(), invoice.getTotalAmount())
+              inv.getCurrencyCode(), inv.getTotalAmount())
           ));
     }
     shell.print(shell.renderTable(buildTable(t.build(), new IntFunction<Iterable<Aligner>>() {
 
       @Override
       public Iterable<Aligner> apply(int c) {
-        return c == 1 ? TOP_LEFT : TOP_RIGHT;
+        return c == 2 ? TOP_LEFT : TOP_RIGHT;
       }
     }, null)));
   }
