@@ -9,7 +9,6 @@ buildscript {
 subprojects {
     apply plugin: "checkstyle"
     apply plugin: "java"
-    apply plugin: "maven-publish"
 
     group = "org.snf.accounting"
 

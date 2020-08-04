@@ -22,21 +22,32 @@
 
 package org.snf.accounting.dao.mybatis.test;
 
+import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.StreamSupport;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.snf.accounting.dao.mybatis.MyBatisAccountDao;
 import org.snf.accounting.dao.mybatis.MyBatisAddressDao;
+import org.snf.accounting.domain.AccountFilter;
+import org.snf.accounting.domain.AccountWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
 import net.solarnetwork.central.user.billing.snf.domain.Account;
 import net.solarnetwork.central.user.billing.snf.domain.Address;
 import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.dao.FilterResults;
 
 /**
  * Test cases for the {@link MyBatisAccountDao} class.
@@ -111,6 +122,51 @@ public class MyBatisAccountDaoTests extends AbstractMyBatisTest {
 
     Account entity = dao.get(last.getId());
     assertThat("Entity unchanged", entity.isSameAs(last), equalTo(true));
+  }
+
+  private List<Account> setupTestAccounts(int count) {
+    List<Account> results = new ArrayList<>(count);
+    for (int i = 0; i < count; i++) {
+      Address addr = addressDao.get(addressDao.save(createTestAddress("test" + i + "@localhost")));
+      Account acct = createTestAccount(addr);
+      acct.setUserId((long) i);
+      acct = dao.get(dao.save(acct));
+      insertAccountBalance(acct.getId().getId(), new BigDecimal(String.valueOf(i * 3 + 3)),
+          new BigDecimal(String.valueOf(i * 3 + 2)), new BigDecimal(String.valueOf(i * 3 + 1)));
+      results.add(acct);
+    }
+    return results;
+  }
+
+  @Test
+  public void filterForEmail_sortDefault() {
+    // GIVEN
+    List<Account> accounts = setupTestAccounts(5);
+
+    // WHEN
+    AccountFilter filter = new AccountFilter();
+    filter.setEmail("test");
+    FilterResults<AccountWithBalance, UserLongPK> result = dao.findFilteredBalances(filter, null,
+        null, null);
+
+    // THEN
+    assertThat("Result returned", result, notNullValue());
+    assertThat("Returned result count", result.getReturnedResultCount(), equalTo(accounts.size()));
+    assertThat("Total results provided", result.getTotalResults(), equalTo((long) accounts.size()));
+
+    List<AccountWithBalance> expectedEntities = accounts.stream()
+        .map(e -> new AccountWithBalance(e)).collect(toList());
+
+    List<AccountWithBalance> balances = StreamSupport.stream(result.spliterator(), false)
+        .collect(toList());
+    assertThat("Returned results", balances, hasSize(expectedEntities.size()));
+    for (int i = 0; i < 4; i++) {
+      AccountWithBalance balance = balances.get(i);
+      AccountWithBalance expected = expectedEntities.get(i);
+      assertThat(format("AccountWithBalance %d returned in order", i), balance, equalTo(expected));
+      // TODO assertThat(format("AccountWithBalance %d data preserved", i),
+      // balance.isSameAs(expected), equalTo(true));
+    }
   }
 
 }

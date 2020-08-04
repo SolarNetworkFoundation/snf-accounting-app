@@ -22,14 +22,21 @@
 
 package org.snf.accounting.dao.mybatis;
 
+import java.util.List;
+
 import org.mybatis.spring.SqlSessionTemplate;
 import org.snf.accounting.dao.AccountDao;
+import org.snf.accounting.domain.AccountFilter;
+import org.snf.accounting.domain.AccountWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
 import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.dao.BasicFilterResults;
+import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.domain.SortDescriptor;
 
 /**
  * JDBC implementation of {@code AccountDao}.
@@ -41,6 +48,37 @@ import net.solarnetwork.central.user.domain.UserLongPK;
 public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, UserLongPK>
     implements AccountDao {
 
+  /** Query name enumeration. */
+  public enum QueryName {
+
+    FindFilteredBalance("find-AccountWithBalance-for-filter");
+
+    private final String queryName;
+
+    private QueryName(String queryName) {
+      this.queryName = queryName;
+    }
+
+    /**
+     * Get the query name.
+     * 
+     * @return the query name
+     */
+    public String getQueryName() {
+      return queryName;
+    }
+
+    /**
+     * Get the query name to use for a count-only result.
+     * 
+     * @return the count query name
+     */
+    public String getCountQueryName() {
+      return queryName + "-count";
+    }
+
+  }
+
   /**
    * Constructor.
    * 
@@ -51,6 +89,40 @@ public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, Use
   public MyBatisAccountDao(SqlSessionTemplate template) {
     super(Account.class, UserLongPK.class);
     setSqlSessionTemplate(template);
+  }
+
+  @Override
+  public FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter,
+      List<SortDescriptor> sorts, Integer offset, Integer max) {
+    if (offset != null || max != null || sorts != null) {
+      filter = filter.clone();
+      filter.setSorts(sorts);
+      filter.setMax(max);
+      if (offset == null) {
+        // force offset to 0 if implied
+        filter.setOffset(0);
+      } else {
+        filter.setOffset(offset);
+      }
+    }
+
+    // attempt count first, if max NOT specified as -1 and NOT a mostRecent query
+    Long totalCount = null;
+    if (max == null || max.intValue() != -1) {
+      AccountFilter countFilter = filter.clone();
+      countFilter.setOffset(null);
+      countFilter.setMax(null);
+      Number n = getSqlSession().selectOne(QueryName.FindFilteredBalance.getCountQueryName(),
+          countFilter);
+      if (n != null) {
+        totalCount = n.longValue();
+      }
+    }
+
+    List<AccountWithBalance> results = selectList(QueryName.FindFilteredBalance.getQueryName(),
+        filter, null, null);
+    return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
+        results.size());
   }
 
 }

@@ -24,20 +24,28 @@ package org.snf.accounting.cli.app.impl;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
+
+import java.util.Locale;
+import java.util.function.IntFunction;
 
 import org.snf.accounting.cli.BaseShellSupport;
 import org.snf.accounting.cli.app.service.AccountService;
+import org.snf.accounting.domain.AccountFilter;
+import org.snf.accounting.domain.AccountWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.table.SimpleHorizontalAligner;
+import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.table.Aligner;
 
 import com.github.fonimus.ssh.shell.SimpleTable;
 import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilder;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
-import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.dao.FilterResults;
 
 /**
  * Commands for accounts.
@@ -70,7 +78,25 @@ public class AccountCommands extends BaseShellSupport {
    */
   @ShellMethod("Show the available accounts.")
   public void accountsShow() {
-    Iterable<Account> accounts = accountService.allAccounts();
+    doAccountWithBalanceSearch(new AccountFilter());
+  }
+
+  /**
+   * Find accounts by email filter.
+   * 
+   * @param email
+   *          the email substring to filter by
+   */
+  @ShellMethod("Find accounts by email.")
+  public void accountsFindEmail(
+      @ShellOption(help = "Email to find (substring match)") String email) {
+    AccountFilter f = new AccountFilter();
+    f.setEmail(email);
+    doAccountWithBalanceSearch(f);
+  }
+
+  private void doAccountWithBalanceSearch(AccountFilter f) {
+    FilterResults<AccountWithBalance, UserLongPK> result = accountService.findFilteredBalances(f);
     // @formatter:off
     SimpleTableBuilder t = SimpleTable.builder()
         .column("ID")
@@ -78,20 +104,35 @@ public class AccountCommands extends BaseShellSupport {
         .column("Info")
         .column("Curr")
         .column("Time Zone")
-        .headerAligner(SimpleHorizontalAligner.left)
-        .lineAligner(SimpleHorizontalAligner.left)
+        .column("Charged")
+        .column("Paid")
+        .column("Due")
         ;
-    for (Account account : accounts) {
+    Locale locale = Locale.forLanguageTag("en-NZ");
+    for (AccountWithBalance account : result) {
       t.line(asList(
           account.getId().getId(),
-          account.getUserId(),
-          format("%s\n%s", account.getAddress().getName(), account.getAddress().getEmail()),
-          account.getCurrencyCode(),
-          account.getAddress().getTimeZoneId()
+          account.getAccount().getUserId(),
+          format("%s\n%s", account.getAccount().getAddress().getName(),
+              account.getAccount().getAddress().getEmail()),
+          account.getAccount().getCurrencyCode(),
+          account.getAccount().getAddress().getTimeZoneId(),
+          formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+              account.getAccount().getCurrencyCode(), account.getBalance().getChargeTotal()),
+          formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+              account.getAccount().getCurrencyCode(), account.getBalance().getPaymentTotal()),
+          formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+              account.getAccount().getCurrencyCode(), account.getBalance().getPaymentTotal()
+              .subtract(account.getBalance().getChargeTotal()))
           ));
     }
-    shell.print(shell.renderTable(t.build()));
-    // @formatter:on
+    shell.print(shell.renderTable(buildTable(t.build(), new IntFunction<Iterable<Aligner>>() {
+
+      @Override
+      public Iterable<Aligner> apply(int c) {
+        return c > 1 && c < 5 ? TOP_LEFT : TOP_RIGHT;
+      }
+    }, null)));
   }
 
 }

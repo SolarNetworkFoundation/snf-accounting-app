@@ -22,9 +22,16 @@
 
 package org.snf.accounting.dao;
 
+import java.util.List;
+
+import org.snf.accounting.domain.AccountFilter;
+import org.snf.accounting.domain.AccountWithBalance;
+
 import net.solarnetwork.central.user.billing.snf.domain.Account;
 import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.dao.GenericDao;
+import net.solarnetwork.domain.SortDescriptor;
 
 /**
  * DAO API for accounts.
@@ -33,5 +40,21 @@ import net.solarnetwork.dao.GenericDao;
  * @version 1.0
  */
 public interface AccountDao extends GenericDao<Account, UserLongPK> {
+
+  /**
+   * API for querying for a filtered set of account balances from all possible results.
+   * 
+   * @param filter
+   *          the query filter
+   * @param sorts
+   *          the optional sort descriptors
+   * @param offset
+   *          an optional result offset
+   * @param max
+   *          an optional maximum number of returned results
+   * @return the results, never {@literal null}
+   */
+  FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter,
+      List<SortDescriptor> sorts, Integer offset, Integer max);
 
 }

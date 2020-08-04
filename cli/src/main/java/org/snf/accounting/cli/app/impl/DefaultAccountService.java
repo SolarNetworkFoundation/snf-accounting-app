@@ -25,12 +25,16 @@ package org.snf.accounting.cli.app.impl;
 import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
+import org.snf.accounting.domain.AccountFilter;
+import org.snf.accounting.domain.AccountWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.dao.FilterResults;
 
 /**
  * Default implementation of {@link AccountService}.
@@ -63,6 +67,13 @@ public class DefaultAccountService implements AccountService {
   @Override
   public Iterable<Account> allAccounts() {
     return accountDao.getAll(null);
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter) {
+    return accountDao.findFilteredBalances(filter, filter.getSorts(), filter.getOffset(),
+        filter.getMax());
   }
 
 }

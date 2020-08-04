@@ -22,6 +22,9 @@
 
 package org.snf.accounting.cli;
 
+import static com.github.fonimus.ssh.shell.SshShellHelper.at;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 import static org.snf.accounting.cli.ShellUtils.getBoldColored;
 import static org.snf.accounting.cli.ShellUtils.wall;
 
@@ -33,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +46,16 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.shell.table.Aligner;
+import org.springframework.shell.table.Formatter;
+import org.springframework.shell.table.SimpleHorizontalAligner;
+import org.springframework.shell.table.SimpleVerticalAligner;
+import org.springframework.shell.table.Table;
+import org.springframework.shell.table.TableBuilder;
 
 import com.github.fonimus.ssh.shell.PromptColor;
+import com.github.fonimus.ssh.shell.SimpleTable;
+import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilderListener;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 
 /**
@@ -284,6 +297,53 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
 
     // broadcast message to all available registered terminals
     wall(banner);
+  }
+
+  /** Align top left. */
+  public static final List<Aligner> TOP_LEFT = unmodifiableList(
+      asList(SimpleVerticalAligner.top, SimpleHorizontalAligner.left));
+
+  /** Align top right. */
+  public static final List<Aligner> TOP_RIGHT = unmodifiableList(
+      asList(SimpleVerticalAligner.top, SimpleHorizontalAligner.right));
+
+  /**
+   * Build a table with column alignments.
+   * 
+   * @param simpleTable
+   *          the table
+   * @param alignments
+   *          the alignment supplier; will be passed the 0-based column index and should not return
+   *          {@literal null}
+   * @return the table
+   */
+  protected Table buildTable(SimpleTable simpleTable, IntFunction<Iterable<Aligner>> alignments,
+      BiFunction<Integer, Integer, Formatter> formatters) {
+    simpleTable.setTableBuilderListener(new SimpleTableBuilderListener() {
+
+      @Override
+      public void onBuilt(TableBuilder tableBuilder) {
+        final int rowCount = simpleTable.getLines().size()
+            + (simpleTable.isDisplayHeaders() ? 1 : 0);
+        final int colCount = simpleTable.getColumns().size();
+        for (int r = 0; r < rowCount; r++) {
+          for (int c = 0; c < colCount; c++) {
+            if (alignments != null) {
+              for (Aligner lineAligner : alignments.apply(c)) {
+                tableBuilder.on(at(r, c)).addAligner(lineAligner);
+              }
+            }
+            if (formatters != null) {
+              Formatter f = formatters.apply(r, c);
+              if (f != null) {
+                tableBuilder.on(at(r, c)).addFormatter(f);
+              }
+            }
+          }
+        }
+      }
+    });
+    return shell.buildTable(simpleTable);
   }
 
 }

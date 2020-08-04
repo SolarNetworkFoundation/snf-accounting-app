@@ -22,7 +22,12 @@
 
 package org.snf.accounting.cli.app.service;
 
+import org.snf.accounting.domain.AccountFilter;
+import org.snf.accounting.domain.AccountWithBalance;
+
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.dao.FilterResults;
 
 /**
  * Service for dealing with accounts.
@@ -38,5 +43,14 @@ public interface AccountService {
    * @return the accounts, never {@literal null}
    */
   Iterable<Account> allAccounts();
+
+  /**
+   * Find accounts with balance info.
+   * 
+   * @param filter
+   *          the filter
+   * @return the results, never {@literal null}
+   */
+  FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter);
 
 }

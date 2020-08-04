@@ -22,6 +22,7 @@
 
 package org.snf.accounting.dao.mybatis.test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -69,9 +70,18 @@ public abstract class AbstractMyBatisTest {
    * @return the address
    */
   protected Address createTestAddress() {
+    return createTestAddress("test@localhost");
+  }
+
+  /**
+   * Create a test address instance.
+   * 
+   * @return the address
+   */
+  protected Address createTestAddress(String email) {
     Address s = new Address(null, Instant.ofEpochMilli(System.currentTimeMillis()));
     s.setName("Tester Dude");
-    s.setEmail("test@localhost");
+    s.setEmail(email);
     s.setCountry("NZ");
     s.setTimeZoneId("Pacific/Auckland");
     s.setRegion("Region");
@@ -127,5 +137,14 @@ public abstract class AbstractMyBatisTest {
       buf.append(" order by ").append(sort);
     }
     return jdbcTemplate.queryForList(buf.toString());
+  }
+
+  protected void insertAccountBalance(Long accountId, BigDecimal chargeTotal,
+      BigDecimal paymentTotal, BigDecimal availableCredit) {
+    // CHECKSTYLE OFF: LineLength
+    jdbcTemplate.update(
+        "insert into solarbill.bill_account_balance (acct_id,charge_total,payment_total,avail_credit) VALUES (?,?,?,?)",
+        accountId, chargeTotal, paymentTotal, availableCredit);
+    // CHECKSTYLE ON: LineLength
   }
 }
