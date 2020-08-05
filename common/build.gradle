@@ -39,6 +39,7 @@ configurations {
 
 dependencies {
 	// Spring
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${myBatisStarterVersion}"
 	implementation 'org.springframework:spring-context'
 	implementation 'org.springframework:spring-jdbc'

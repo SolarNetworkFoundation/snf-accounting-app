@@ -34,8 +34,8 @@ import java.util.function.Consumer;
 
 import org.snf.accounting.cli.BaseShellSupport;
 import org.snf.accounting.cli.CoordinateVisitor;
-import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.domain.PaymentWithInvoicePayments;
+import org.snf.accounting.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;

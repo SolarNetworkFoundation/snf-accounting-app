@@ -22,7 +22,7 @@
 
 package org.snf.accounting.cli.app.config;
 
-import org.snf.accounting.cli.app.impl.SimpleUserDetailsService;
+import org.snf.accounting.impl.SimpleUserDetailsService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

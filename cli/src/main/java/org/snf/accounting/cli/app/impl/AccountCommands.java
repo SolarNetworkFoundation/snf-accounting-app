@@ -30,9 +30,9 @@ import java.util.Locale;
 import java.util.function.IntFunction;
 
 import org.snf.accounting.cli.BaseShellSupport;
-import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
+import org.snf.accounting.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;

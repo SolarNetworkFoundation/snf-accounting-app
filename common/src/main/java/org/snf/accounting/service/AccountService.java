@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package org.snf.accounting.cli.app.service;
+package org.snf.accounting.service;
 
 import java.time.YearMonth;
 

@@ -39,8 +39,8 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
 import org.snf.accounting.cli.BaseShellSupport;
-import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.domain.SnfInvoiceWithBalance;
+import org.snf.accounting.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.shell.standard.ShellCommandGroup;

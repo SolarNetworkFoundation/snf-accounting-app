@@ -20,13 +20,12 @@
  * ==================================================================
  */
 
-package org.snf.accounting.cli.app.impl;
+package org.snf.accounting.impl;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
 
-import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
 import org.snf.accounting.dao.PaymentDao;
@@ -34,6 +33,7 @@ import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
 import org.snf.accounting.domain.PaymentWithInvoicePayments;
 import org.snf.accounting.domain.SnfInvoiceWithBalance;
+import org.snf.accounting.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
