@@ -54,7 +54,7 @@ dependencies {
 	
 	// SN support
 	implementation "net.solarnetwork.central:net.solarnetwork.central.common.dao.mybatis:2.6.0"
-	implementation "net.solarnetwork.central:net.solarnetwork.central.user.billing.snf:1.0.1"
+	implementation "net.solarnetwork.central:net.solarnetwork.central.user.billing.snf:${snfBillingVersion}"
 	
 	// Utilities
 	implementation "com.github.davidmoten:word-wrap:${wordWrapVersion}"

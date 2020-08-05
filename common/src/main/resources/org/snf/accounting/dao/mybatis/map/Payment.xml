@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.snf.accounting.dao.mybatis.Payment">
+  
+  <insert id="update-Payment" parameterType="net.solarnetwork.central.user.billing.snf.domain.Payment">
+    INSERT INTO solarbill.bill_payment (
+      id
+      <if test="created != null">,created</if>
+      , acct_id
+      , pay_type
+      , amount
+      , currency
+      , ext_key
+      , ref
+    ) VALUES (
+      #{id.id}
+      <if test="created != null">,#{created}</if>
+      , #{accountId}
+      , #{paymentType,typeHandler=net.solarnetwork.central.dao.mybatis.type.CodedValueTypeHandler}
+      , #{amount}
+      , #{currencyCode}
+      , #{externalKey}
+      , #{reference}
+    )
+    ON CONFLICT (acct_id, id) DO UPDATE SET
+      pay_type = EXCLUDED.pay_type
+      , amount = EXCLUDED.amount
+      , currency = EXCLUDED.currency
+      , ext_key = EXCLUDED.ext_key
+      , ref = EXCLUDED.ref
+  </insert>
+  
+  <sql id="fragment-Payment-full-result">
+      pay.id          AS bill_payment_id
+    , pay.created     AS bill_payment_created
+    , pay.acct_id     AS bill_payment_acct_id
+    , pay.pay_type    AS bill_payment_pay_type
+    , pay.amount      AS bill_payment_amount
+    , pay.currency    AS bill_payment_currency
+    , pay.ext_key     AS bill_payment_ext_key
+    , pay.ref         AS bill_payment_ref
+  </sql>
+
+  <sql id="fragment-InvoicePayment-full-result">
+      ipay.id         AS bill_invoice_payment_id
+    , ipay.created    AS bill_invoice_payment_created
+    , ipay.acct_id    AS bill_invoice_payment_acct_id
+    , ipay.pay_id     AS bill_invoice_payment_pay_id
+    , ipay.inv_id     AS bill_invoice_payment_inv_id
+    , ipay.amount     AS bill_invoice_payment_amount
+  </sql>
+
+  <resultMap id="InvoicePayment-FullResult" type="net.solarnetwork.central.user.billing.snf.domain.InvoicePayment">
+    <constructor>
+      <idArg column="bill_invoice_payment_id" javaType="java.util.UUID"/>
+      <arg column="bill_invoice_payment_user_id" javaType="Long"/>
+      <arg column="bill_invoice_payment_acct_id" javaType="Long"/>
+      <arg column="bill_invoice_payment_pay_id" javaType="java.util.UUID"/>
+      <arg column="bill_invoice_payment_inv_id" javaType="Long"/>
+      <arg column="bill_invoice_payment_created" javaType="java.time.Instant"/>
+    </constructor>
+    <result property="amount" column="bill_invoice_payment_amount"/>
+  </resultMap>
+
+  <resultMap id="Payment-FullResult" type="org.snf.accounting.domain.PaymentWithInvoicePayments">
+    <constructor>
+      <idArg column="bill_payment_id" javaType="java.util.UUID"/>
+      <arg column="bill_account_user_id" javaType="Long"/>
+      <arg column="bill_payment_acct_id" javaType="Long"/>
+      <arg column="bill_payment_created" javaType="java.time.Instant"/>
+    </constructor>
+    <result property="paymentType" column="bill_payment_pay_type" javaType="net.solarnetwork.central.user.billing.snf.domain.PaymentType" typeHandler="net.solarnetwork.central.dao.mybatis.type.CodedValueTypeHandler"/>
+    <result property="amount" column="bill_payment_amount"/>
+    <result property="currencyCode" column="bill_payment_currency"/>
+    <result property="externalKey" column="bill_payment_ext_key"/>
+    <result property="reference" column="bill_payment_ref"/>
+    <association property="account" notNullColumn="bill_account_id" resultMap="org.snf.accounting.dao.mybatis.Account.Account-FullResult"/>
+    <association property="invoicePayments" notNullColumn="bill_invoice_payment_id" resultMap="InvoicePayment-FullResult"/>
+  </resultMap>
+
+  <select id="get-Payment-for-id" parameterType="net.solarnetwork.central.user.domain.UserUuidPK" resultMap="Payment-FullResult">
+    SELECT
+      <include refid="fragment-Payment-full-result"/>
+      , <include refid="org.snf.accounting.dao.mybatis.Account.fragment-Account-full-result"/>
+      , <include refid="org.snf.accounting.dao.mybatis.Address.fragment-Address-full-result"/>
+      , <include refid="fragment-InvoicePayment-full-result"/>
+      , acct.user_id AS bill_payment_user_id
+      , acct.user_id AS bill_invoice_payment_user_id
+    FROM
+      solarbill.bill_payment pay
+    INNER JOIN 
+      solarbill.bill_account acct ON acct.id = pay.acct_id
+    INNER JOIN
+      solarbill.bill_address addr ON addr.id = acct.addr_id
+    LEFT OUTER JOIN
+      solarbill.bill_invoice_payment ipay ON ipay.pay_id = pay.id
+    WHERE
+      pay.id = #{id}
+  </select>
+
+  <sql id="find-Payment-for-filter-body">
+    FROM
+      solarbill.bill_payment pay
+    INNER JOIN 
+      solarbill.bill_account acct ON acct.id = pay.acct_id
+    INNER JOIN
+      solarbill.bill_address addr ON addr.id = acct.addr_id
+    LEFT OUTER JOIN
+      solarbill.bill_invoice_payment ipay ON ipay.pay_id = pay.id
+    <where>
+      <if test="offset != null and max != null">
+        <!-- Limiting done via sub-query because we want unlimited items pulled back for our limited invoices. -->
+        AND pay.id = ANY(
+          SELECT pay1.id 
+          FROM solarbill.bill_payment pay1
+          <if test="userId != null">
+            INNER JOIN solarbill.bill_account acct1 ON acct1.id = pay1.acct_id
+          </if>
+          <where>
+            <if test="userId != null">
+              AND acct1.user_id = #{userId}
+            </if>
+            <if test="accountId != null">
+              AND pay1.acct_id = #{accountId}
+            </if>
+            <if test="startDate != null">
+              AND pay1.created &gt;= (#{filter.startDate,javaType=java.time.LocalDate,jdbcType=DATE}::timestamp AT TIME ZONE addr.time_zone)
+            </if>
+            <if test="endDate != null">
+              AND pay1.created &lt; (#{filter.endDate,javaType=java.time.LocalDate,jdbcType=DATE}::timestamp AT TIME ZONE addr.time_zone)
+            </if>
+          </where>
+          ORDER BY
+          <choose>
+            <when test="sorts != null and sorts.size &gt; 0">
+               <foreach collection="sorts" item="item" separator=",">
+                <if test="item.sortKey == &quot;ACCOUNT&quot;">pay1.acct_id</if>
+                <if test="item.sortKey == &quot;DATE&quot;">pay1.created</if>
+                <if test="item.sortKey == &quot;ID&quot;">pay1.id</if>
+                <if test="item.descending">DESC</if>
+              </foreach>
+            </when>
+            <otherwise>
+              pay1.created DESC, pay1.id
+            </otherwise>
+          </choose>
+          LIMIT #{max} OFFSET #{offset}
+        )
+      </if>
+      <if test="userId != null">
+        AND acct.user_id = #{userId}
+      </if>
+      <if test="accountId != null">
+        AND pay.acct_id = #{accountId}
+      </if>
+      <if test="startDate != null">
+        AND pay.created &gt;= (#{filter.startDate,javaType=java.time.LocalDate,jdbcType=DATE}::timestamp AT TIME ZONE addr.time_zone)
+      </if>
+      <if test="endDate != null">
+        AND pay.created &lt; (#{filter.endDate,javaType=java.time.LocalDate,jdbcType=DATE}::timestamp AT TIME ZONE addr.time_zone)
+      </if>
+    </where>
+  </sql>
+
+  <select id="find-Payment-for-filter" parameterType="net.solarnetwork.central.user.billing.snf.domain.PaymentFilter" 
+      resultMap="Payment-FullResult" fetchSize="50" resultSetType="FORWARD_ONLY">
+    SELECT
+      <include refid="fragment-Payment-full-result"/>
+      , <include refid="org.snf.accounting.dao.mybatis.Account.fragment-Account-full-result"/>
+      , <include refid="org.snf.accounting.dao.mybatis.Address.fragment-Address-full-result"/>
+      , <include refid="fragment-InvoicePayment-full-result"/>
+      , acct.user_id AS bill_account_user_id
+      , acct.user_id AS bill_invoice_payment_user_id
+    <include refid="find-Payment-for-filter-body"/>
+    ORDER BY
+    <choose>
+      <when test="sorts != null and sorts.size &gt; 0">
+         <foreach collection="sorts" item="item" separator=",">
+          <if test="item.sortKey == &quot;ACCOUNT&quot;">bill_payment_acct_id</if>
+          <if test="item.sortKey == &quot;DATE&quot;">bill_payment_created</if>
+          <if test="item.sortKey == &quot;ID&quot;">bill_payment_id</if>
+          <if test="item.descending">DESC</if>
+        </foreach>
+      </when>
+      <otherwise>
+        bill_payment_created DESC, bill_payment_id
+      </otherwise>
+    </choose>
+  </select>
+
+  <select id="find-Payment-for-filter-count" parameterType="net.solarnetwork.central.user.billing.snf.domain.PaymentFilter"
+      resultType="long">
+    SELECT count(DISTINCT pay.id)
+    <include refid="find-Payment-for-filter-body"/>
+  </select>
+
+</mapper>

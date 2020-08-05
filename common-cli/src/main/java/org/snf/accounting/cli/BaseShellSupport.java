@@ -52,6 +52,7 @@ import org.springframework.shell.table.SimpleHorizontalAligner;
 import org.springframework.shell.table.SimpleVerticalAligner;
 import org.springframework.shell.table.Table;
 import org.springframework.shell.table.TableBuilder;
+import org.springframework.shell.table.TableBuilder.CellMatcherStub;
 
 import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SimpleTable;
@@ -311,6 +312,17 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
       asList(SimpleVerticalAligner.top, SimpleHorizontalAligner.right));
 
   /**
+   * Renders table in current terminal.
+   *
+   * @param table
+   *          built table
+   * @return table as string
+   */
+  public String renderTable(Table table) {
+    return table.render(shell.terminalSize().getColumns());
+  }
+
+  /**
    * Build a table with column alignments.
    * 
    * @param simpleTable
@@ -346,6 +358,36 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
         }
       }
     });
+    return shell.buildTable(simpleTable);
+  }
+
+  /**
+   * Build a table with a cell customizer.
+   * 
+   * @param simpleTable
+   *          the simple table
+   * @param cellVisitor
+   *          the visitor
+   * @return the table
+   */
+  protected Table buildTable(SimpleTable simpleTable,
+      CoordinateVisitor<CellMatcherStub> cellVisitor) {
+    if (cellVisitor != null) {
+      simpleTable.setTableBuilderListener(new SimpleTableBuilderListener() {
+
+        @Override
+        public void onBuilt(TableBuilder tableBuilder) {
+          final int rowCount = simpleTable.getLines().size()
+              + (simpleTable.isDisplayHeaders() ? 1 : 0);
+          final int colCount = simpleTable.getColumns().size();
+          for (int r = 0; r < rowCount; r++) {
+            for (int c = 0; c < colCount; c++) {
+              cellVisitor.visit(c, r, tableBuilder.on(at(r, c)));
+            }
+          }
+        }
+      });
+    }
     return shell.buildTable(simpleTable);
   }
 

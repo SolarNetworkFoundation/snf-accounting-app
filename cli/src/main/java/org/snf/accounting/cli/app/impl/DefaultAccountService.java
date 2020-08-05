@@ -25,8 +25,10 @@ package org.snf.accounting.cli.app.impl;
 import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
+import org.snf.accounting.dao.PaymentDao;
 import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
+import org.snf.accounting.domain.PaymentWithInvoicePayments;
 import org.snf.accounting.domain.SnfInvoiceWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,8 +37,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
+import net.solarnetwork.central.user.domain.UserUuidPK;
 import net.solarnetwork.dao.FilterResults;
 
 /**
@@ -51,6 +55,7 @@ public class DefaultAccountService implements AccountService {
   private final AddressDao addressDao;
   private final AccountDao accountDao;
   private final SnfInvoiceDao invoiceDao;
+  private final PaymentDao paymentDao;
 
   /**
    * Constructor.
@@ -61,14 +66,17 @@ public class DefaultAccountService implements AccountService {
    *          the account DAO
    * @param invoiceDao
    *          the invoice DAO
+   * @param paymentDao
+   *          the payment DAO
    */
   @Autowired
   public DefaultAccountService(AddressDao addressDao, AccountDao accountDao,
-      SnfInvoiceDao invoiceDao) {
+      SnfInvoiceDao invoiceDao, PaymentDao paymentDao) {
     super();
     this.addressDao = addressDao;
     this.accountDao = accountDao;
     this.invoiceDao = invoiceDao;
+    this.paymentDao = paymentDao;
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
@@ -98,6 +106,13 @@ public class DefaultAccountService implements AccountService {
   public SnfInvoiceWithBalance invoiceForId(Long invoiceId) {
     UserLongPK id = new UserLongPK(null, invoiceId);
     return (SnfInvoiceWithBalance) invoiceDao.get(id);
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public FilterResults<PaymentWithInvoicePayments, UserUuidPK> findFilteredPayments(
+      PaymentFilter filter) {
+    return paymentDao.findFiltered(filter, filter.getSorts(), filter.getOffset(), filter.getMax());
   }
 
 }
