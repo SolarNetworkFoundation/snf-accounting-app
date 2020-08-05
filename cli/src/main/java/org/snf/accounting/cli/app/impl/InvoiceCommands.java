@@ -109,6 +109,30 @@ public class InvoiceCommands extends BaseShellSupport {
   }
 
   /**
+   * List invoices for account.
+   * 
+   * @param accountId
+   *          the account ID to show unpaid invoices for
+   */
+  @ShellMethod("List unpaid invoices for account.")
+  public void unpaidInvoicesForAccount(
+      @ShellOption(help = "The account ID to list unpaid invoices for.") Long accountId,
+      @ShellOption(help = "The maximum number of results to return, or 0 for unlimited.",
+          defaultValue = "0") int max,
+      @ShellOption(help = "The result page offset, starting from 1.",
+          defaultValue = "1") int page) {
+    SnfInvoiceFilter f = SnfInvoiceFilter.forAccount(accountId);
+    f.setUnpaidOnly(true);
+    if (max >= 1) {
+      f.setMax(max);
+      if (page > 1) {
+        f.setOffset((page - 1) * max);
+      }
+    }
+    doInvoiceSearch(f);
+  }
+
+  /**
    * Show details for one invoice.
    * 
    * @param invoiceId

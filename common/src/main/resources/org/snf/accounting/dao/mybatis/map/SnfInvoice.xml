@@ -103,7 +103,7 @@
         SELECT inv.id AS inv_id
         FROM paid, bill
         WHERE COALESCE(paid, 0::NUMERIC) &lt; COALESCE(bill, 0::NUMERIC) 
-      ) pay ON pay.inv_id = inv.id
+      ) unpaid ON unpaid.inv_id = inv.id
     </if>
     <where>
       <choose>
@@ -130,7 +130,7 @@
                 SELECT inv.id AS inv_id
                 FROM paid, bill
                 WHERE COALESCE(paid, 0::NUMERIC) &lt; COALESCE(bill, 0::NUMERIC) 
-              ) pay ON pay.inv_id = inv.id
+              ) unpaid ON unpaid.inv_id = inv.id
             </if>
             <where>
               <if test="userId != null">
