@@ -134,4 +134,50 @@
         )
   </select>
   
+  <sql id="find-AccountWithBalance-for-filter-body">
+    FROM
+      solarbill.bill_account acct
+    INNER JOIN
+      solarbill.bill_address addr ON addr.id = acct.addr_id
+    INNER JOIN
+      solarbill.bill_account_balance bal ON bal.acct_id = acct.id
+    <where>
+      <if test="email != null">
+        AND addr.email LIKE '%' || #{email} || '%'
+      </if>
+    </where>
+  </sql>
+  
+  <resultMap id="AccountWithBalance-FullResult" type="org.snf.accounting.domain.AccountWithBalance">
+    <association property="account" notNullColumn="bill_account_id" resultMap="Account-FullResult"/>
+    <association property="balance" notNullColumn="bill_account_balance_acct_id" resultMap="AccountBalance-FullResult"/>
+  </resultMap>
+
+  <select id="find-AccountWithBalance-for-filter" parameterType="org.snf.accounting.domain.AccountFilter" 
+      resultMap="AccountWithBalance-FullResult" fetchSize="50" resultSetType="FORWARD_ONLY">
+    SELECT
+        <include refid="fragment-Account-full-result"/>
+      , <include refid="org.snf.accounting.dao.mybatis.Address.fragment-Address-full-result"/>
+      , <include refid="fragment-AccountBalance-full-result"/>
+    <include refid="find-AccountWithBalance-for-filter-body"/>
+    ORDER BY
+    <choose>
+      <when test="sorts != null and sorts.size &gt; 0">
+         <foreach collection="sorts" item="item" separator=",">
+          <if test="item.sortKey == &quot;ID&quot;">bill_account_id</if>
+          <if test="item.descending">DESC</if>
+        </foreach>
+      </when>
+      <otherwise>
+        bill_account_id
+      </otherwise>
+    </choose>
+  </select>
+
+  <select id="find-AccountWithBalance-for-filter-count" parameterType="org.snf.accounting.domain.AccountFilter"
+      resultType="long">
+    SELECT count(acct.id)
+    <include refid="find-AccountWithBalance-for-filter-body"/>
+  </select>
+  
 </mapper>
