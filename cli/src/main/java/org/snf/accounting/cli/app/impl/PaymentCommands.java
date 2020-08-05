@@ -27,6 +27,7 @@ import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
+import static org.snf.accounting.cli.ResultPaginationCommands.setNavigationHandler;
 
 import java.time.ZoneId;
 import java.util.Locale;
@@ -106,6 +107,13 @@ public class PaymentCommands extends BaseShellSupport {
   }
 
   private void doPaymentSearch(PaymentFilter f) {
+    setNavigationHandler(f, new Consumer<PaymentFilter>() {
+
+      @Override
+      public void accept(PaymentFilter next) {
+        doPaymentSearch(next);
+      }
+    });
     FilterResults<PaymentWithInvoicePayments, UserUuidPK> result = accountService
         .findFilteredPayments(f);
     // @formatter:off

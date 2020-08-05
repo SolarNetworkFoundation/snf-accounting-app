@@ -27,6 +27,7 @@ import static java.time.format.DateTimeFormatter.ISO_DATE;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem.DEFAULT_ITEM_ORDER;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
+import static org.snf.accounting.cli.ResultPaginationCommands.setNavigationHandler;
 import static org.snf.accounting.cli.ShellUtils.getBold;
 
 import java.math.BigDecimal;
@@ -94,6 +95,14 @@ public class InvoiceCommands extends BaseShellSupport {
    * 
    * @param accountId
    *          the account ID to show invoices for
+   * @param minMonth
+   *          a minimum invoice date (inclusive)
+   * @param maxMonth
+   *          a maximum invoice date (exclusive)
+   * @param max
+   *          the maximum number of results, or {@literal 0} for unlimited
+   * @param page
+   *          the page offset, starting from 1
    */
   @ShellMethod("List invoices for account.")
   public void invoicesForAccount(
@@ -129,6 +138,56 @@ public class InvoiceCommands extends BaseShellSupport {
         return;
       }
     }
+    doInvoiceSearch(f);
+  }
+
+  /**
+   * LIst invoices across accounts.
+   * 
+   * @param minMonth
+   *          a minimum invoice date (inclusive)
+   * @param maxMonth
+   *          a maximum invoice date (exclusive)
+   * @param max
+   *          the maximum number of results, or {@literal 0} for unlimited
+   * @param page
+   *          the page offset, starting from 1
+   */
+  @ShellMethod("List invoices.")
+  public void invoicesList(
+      @ShellOption(help = "The minimum invoice month (inclusive) in YYYY-MM",
+          defaultValue = "") String minMonth,
+      @ShellOption(help = "The maximum invoice month (exclusive) in YYYY-MM",
+          defaultValue = "") String maxMonth,
+      @ShellOption(help = "Only include unpaid invoices.", arity = 0) boolean unpaidOnly,
+      @ShellOption(help = "The maximum number of results to return, or 0 for unlimited.",
+          defaultValue = "0") int max,
+      @ShellOption(help = "The result page offset, starting from 1.",
+          defaultValue = "1") int page) {
+    SnfInvoiceFilter f = new SnfInvoiceFilter();
+    if (max >= 1) {
+      f.setMax(max);
+      if (page > 1) {
+        f.setOffset((page - 1) * max);
+      }
+    }
+    if (minMonth != null && !minMonth.isEmpty()) {
+      try {
+        f.setStartDate(YearMonth.parse(minMonth).atDay(1));
+      } catch (DateTimeParseException e) {
+        shell.printError("The --min-month value is not valid. Use YYYY-MM syntax.");
+        return;
+      }
+    }
+    if (maxMonth != null && !maxMonth.isEmpty()) {
+      try {
+        f.setEndDate(YearMonth.parse(maxMonth).atDay(1));
+      } catch (DateTimeParseException e) {
+        shell.printError("The --max-month value is not valid. Use YYYY-MM syntax.");
+        return;
+      }
+    }
+    f.setUnpaidOnly(unpaidOnly);
     doInvoiceSearch(f);
   }
 
@@ -257,6 +316,13 @@ public class InvoiceCommands extends BaseShellSupport {
   }
 
   private void doInvoiceSearch(SnfInvoiceFilter f) {
+    setNavigationHandler(f, new Consumer<SnfInvoiceFilter>() {
+
+      @Override
+      public void accept(SnfInvoiceFilter next) {
+        doInvoiceSearch(next);
+      }
+    });
     FilterResults<SnfInvoiceWithBalance, UserLongPK> result = accountService
         .findFilteredInvoices(f);
     // @formatter:off
@@ -264,6 +330,7 @@ public class InvoiceCommands extends BaseShellSupport {
         .column("ID")
         .column("Num")
         .column("Date")
+        .column("Acct")
         .column("Items")
         .column("Amount")
         .column("Due")
@@ -275,6 +342,7 @@ public class InvoiceCommands extends BaseShellSupport {
           inv.getId().getId(),
           format("INV-%s", invoice.getInvoiceNumber()),
           ISO_DATE.format(inv.getStartDate()),
+          format("%s (%d)", inv.getAddress().getEmail(), inv.getAccountId()),
           inv.getItemCount(),
           formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
               inv.getCurrencyCode(), inv.getTotalAmount()),
@@ -286,7 +354,7 @@ public class InvoiceCommands extends BaseShellSupport {
 
       @Override
       public Iterable<Aligner> apply(int c) {
-        return c == 2 ? TOP_LEFT : TOP_RIGHT;
+        return c == 2 || c == 3 ? TOP_LEFT : TOP_RIGHT;
       }
     }, null)));
   }

@@ -25,8 +25,10 @@ package org.snf.accounting.cli.app.impl;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
+import static org.snf.accounting.cli.ResultPaginationCommands.setNavigationHandler;
 
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
 import org.snf.accounting.cli.BaseShellSupport;
@@ -96,6 +98,13 @@ public class AccountCommands extends BaseShellSupport {
   }
 
   private void doAccountWithBalanceSearch(AccountFilter f) {
+    setNavigationHandler(f, new Consumer<AccountFilter>() {
+
+      @Override
+      public void accept(AccountFilter next) {
+        doAccountWithBalanceSearch(next);
+      }
+    });
     FilterResults<AccountWithBalance, UserLongPK> result = accountService.findFilteredBalances(f);
     // @formatter:off
     SimpleTableBuilder t = SimpleTable.builder()
