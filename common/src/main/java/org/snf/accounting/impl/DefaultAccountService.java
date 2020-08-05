@@ -68,6 +68,7 @@ import net.solarnetwork.dao.FilterResults;
 @Service
 public class DefaultAccountService implements AccountService {
 
+  @SuppressWarnings("unused")
   private final AddressDao addressDao;
   private final AccountDao accountDao;
   private final SnfInvoiceDao invoiceDao;
