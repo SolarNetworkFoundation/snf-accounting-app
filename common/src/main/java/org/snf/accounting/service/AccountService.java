@@ -99,4 +99,13 @@ public interface AccountService {
    */
   AccountTask createInvoiceGenerationTask(Long accountId, YearMonth month);
 
+  /**
+   * Create an invoice deliver task for a given invoice.
+   * 
+   * @param invoiceId
+   *          the invoice ID
+   * @return the account task
+   */
+  AccountTask createInvoiceDeliverTask(final Long invoiceId);
+
 }

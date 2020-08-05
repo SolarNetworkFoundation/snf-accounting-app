@@ -22,9 +22,16 @@
 
 package org.snf.accounting.impl;
 
+import static net.solarnetwork.central.user.billing.snf.domain.AccountTask.newTask;
+import static net.solarnetwork.central.user.billing.snf.domain.AccountTaskType.DeliverInvoice;
+import static net.solarnetwork.central.user.billing.snf.domain.AccountTaskType.GenerateInvoice;
+
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
@@ -44,9 +51,9 @@ import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
 import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
-import net.solarnetwork.central.user.billing.snf.domain.AccountTaskType;
 import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
 import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
+import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.central.user.domain.UserUuidPK;
@@ -146,8 +153,23 @@ public class DefaultAccountService implements AccountService {
     }
 
     ZonedDateTime targetDate = date.atStartOfDay(account.getTimeZone());
-    AccountTask task = AccountTask.newTask(targetDate.toInstant(), AccountTaskType.GenerateInvoice,
-        accountId);
+    AccountTask task = newTask(targetDate.toInstant(), GenerateInvoice, accountId);
+    accountDao.saveTask(task);
+    return task;
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public AccountTask createInvoiceDeliverTask(final Long invoiceId) {
+    SnfInvoice invoice = invoiceDao.get(new UserLongPK(null, invoiceId));
+    if (invoice == null) {
+      String err = String.format("Invoice %d not found.", invoiceId);
+      throw new EmptyResultDataAccessException(err, 1);
+    }
+    Map<String, Object> taskData = new LinkedHashMap<>(2);
+    taskData.put("userId", invoice.getUserId());
+    taskData.put("id", invoice.getId().getId());
+    AccountTask task = newTask(Instant.now(), DeliverInvoice, invoice.getAccountId(), taskData);
     accountDao.saveTask(task);
     return task;
   }

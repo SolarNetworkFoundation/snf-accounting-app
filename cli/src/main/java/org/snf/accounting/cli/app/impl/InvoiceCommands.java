@@ -381,4 +381,23 @@ public class InvoiceCommands extends BaseShellSupport {
     }
   }
 
+  /**
+   * Deliver an invoice for an account.
+   * 
+   * @param invoiceId the invoice ID
+   */
+  @ShellMethod("Deliver invoice for an account.")
+  @org.springframework.shell.standard.ShellMethodAvailability("adminAvailability")
+  public void deliverInvoice(
+      @ShellOption(help = "The invoice ID to deliver.") Long invoiceId) {
+    try {
+      AccountTask task = accountService.createInvoiceDeliverTask(invoiceId);
+      if (task != null) {
+        shell.printSuccess(format("Created invoice deliver task %s", task.getId()));
+      }
+    } catch (DataAccessException e) {
+      shell.printError(e.getMessage());
+    }
+  }
+
 }
