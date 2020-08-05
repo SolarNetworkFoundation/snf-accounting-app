@@ -22,12 +22,15 @@
 
 package org.snf.accounting.cli.app.service;
 
+import java.time.YearMonth;
+
 import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
 import org.snf.accounting.domain.PaymentWithInvoicePayments;
 import org.snf.accounting.domain.SnfInvoiceWithBalance;
 
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
@@ -84,5 +87,16 @@ public interface AccountService {
    * @return the results, never {@literal null}
    */
   FilterResults<PaymentWithInvoicePayments, UserUuidPK> findFilteredPayments(PaymentFilter filter);
+
+  /**
+   * Create an invoice generation task for a given account and month.
+   * 
+   * @param accountId
+   *          the account ID
+   * @param month
+   *          the month
+   * @return the account task
+   */
+  AccountTask createInvoiceGenerationTask(Long accountId, YearMonth month);
 
 }

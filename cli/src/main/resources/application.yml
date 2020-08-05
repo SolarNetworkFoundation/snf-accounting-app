@@ -51,8 +51,7 @@ debugMode: true
 
 logging:
   level:
-    com.github.fonimus: DEBUG
-    org.springframework.boot.autoconfigure: INFO
+    org.snf.accounting.dao.mybatis: TRACE
 
 spring:
   profiles: development

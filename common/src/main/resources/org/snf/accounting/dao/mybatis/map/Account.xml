@@ -180,4 +180,25 @@
     <include refid="find-AccountWithBalance-for-filter-body"/>
   </select>
   
+  <!-- 
+       AccountTask support
+   -->
+  
+  <insert id="insert-AccountTask" parameterType="net.solarnetwork.central.user.billing.snf.domain.AccountTask">
+    INSERT INTO solarbill.bill_account_task (
+      id
+      <if test="created != null">,created</if>
+      , acct_id
+      , task_type
+      , jdata
+    ) VALUES (
+      #{id}
+      <if test="created != null">,#{created}</if>
+      , #{accountId}
+      , #{taskType,typeHandler=net.solarnetwork.central.dao.mybatis.type.CodedValueTypeHandler}
+      , #{taskData,jdbcType=VARCHAR,typeHandler=net.solarnetwork.central.dao.mybatis.type.JsonMapTypeHandler}::jsonb
+    )
+    ON CONFLICT (id) DO NOTHING
+  </insert>
+  
 </mapper>

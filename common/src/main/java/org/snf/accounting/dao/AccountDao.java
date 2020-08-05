@@ -28,6 +28,7 @@ import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
 
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.dao.GenericDao;
@@ -56,5 +57,13 @@ public interface AccountDao extends GenericDao<Account, UserLongPK> {
    */
   FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter,
       List<SortDescriptor> sorts, Integer offset, Integer max);
+
+  /**
+   * Save a task.
+   * 
+   * @param task
+   *          the task to save
+   */
+  void saveTask(AccountTask task);
 
 }

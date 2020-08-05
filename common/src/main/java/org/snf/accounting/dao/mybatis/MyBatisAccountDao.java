@@ -33,6 +33,7 @@ import org.springframework.stereotype.Repository;
 
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
@@ -51,7 +52,9 @@ public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, Use
   /** Query name enumeration. */
   public enum QueryName {
 
-    FindFilteredBalance("find-AccountWithBalance-for-filter");
+    FindFilteredBalance("find-AccountWithBalance-for-filter"),
+
+    SaveTask("insert-AccountTask");
 
     private final String queryName;
 
@@ -123,6 +126,11 @@ public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, Use
         filter, null, null);
     return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
         results.size());
+  }
+
+  @Override
+  public void saveTask(AccountTask task) {
+    getSqlSessionTemplate().insert(QueryName.SaveTask.getQueryName(), task);
   }
 
 }

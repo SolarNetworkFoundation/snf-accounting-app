@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="net.solarnetwork.central.user.billing.snf.dao.mybatis.SnfInvoice">
+<mapper namespace="org.snf.accounting.dao.mybatis.SnfInvoice">
 
   <insert id="insert-SnfInvoice" parameterType="net.solarnetwork.central.user.billing.snf.domain.SnfInvoice">
     <selectKey keyProperty="id.id" resultType="long" order="BEFORE"> 
@@ -140,10 +140,10 @@
                 AND inv1.acct_id = #{accountId}
               </if>
               <if test="startDate != null">
-                AND inv1.date_start &gt;= #{filter.startDate,javaType=java.time.LocalDate,jdbcType=DATE}
+                AND inv1.date_start &gt;= #{startDate,javaType=java.time.LocalDate,jdbcType=DATE}
               </if>
               <if test="endDate != null">
-                AND inv1.date_end &lt; #{filter.endDate,javaType=java.time.LocalDate,jdbcType=DATE}
+                AND inv1.date_start &lt; #{endDate,javaType=java.time.LocalDate,jdbcType=DATE}
               </if>
             </where>
             ORDER BY
@@ -171,10 +171,10 @@
             AND inv.acct_id = #{accountId}
           </if>
           <if test="startDate != null">
-            AND inv.date_start &gt;= #{filter.startDate,javaType=java.time.LocalDate,jdbcType=DATE}
+            AND inv.date_start &gt;= #{startDate,javaType=java.time.LocalDate,jdbcType=DATE}
           </if>
           <if test="endDate != null">
-            AND inv.date_end &lt; #{filter.endDate,javaType=java.time.LocalDate,jdbcType=DATE}
+            AND inv.date_start &lt; #{endDate,javaType=java.time.LocalDate,jdbcType=DATE}
           </if>
         </otherwise>
       </choose>

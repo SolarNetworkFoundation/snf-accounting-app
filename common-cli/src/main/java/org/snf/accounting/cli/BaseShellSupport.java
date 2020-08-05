@@ -24,6 +24,7 @@ package org.snf.accounting.cli;
 
 import static com.github.fonimus.ssh.shell.SshShellHelper.at;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 import static org.snf.accounting.cli.ShellUtils.getBoldColored;
 import static org.snf.accounting.cli.ShellUtils.wall;
@@ -46,6 +47,7 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.shell.Availability;
 import org.springframework.shell.table.Aligner;
 import org.springframework.shell.table.Formatter;
 import org.springframework.shell.table.SimpleHorizontalAligner;
@@ -401,4 +403,15 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
     return (l != null ? l : DEFAULT_LOCALE);
   }
 
+  /**
+   * Check for admin-level authorization.
+   * 
+   * @return the availability
+   */
+  public Availability adminAvailability() {
+    if (!shell.checkAuthorities(singletonList("ADMIN"))) {
+      return Availability.unavailable("Not authorized to execute that command.");
+    }
+    return Availability.available();
+  }
 }

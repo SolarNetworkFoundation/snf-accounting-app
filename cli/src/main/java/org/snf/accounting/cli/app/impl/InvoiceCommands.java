@@ -32,6 +32,8 @@ import static org.snf.accounting.cli.ShellUtils.getBold;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -40,6 +42,7 @@ import org.snf.accounting.cli.BaseShellSupport;
 import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.domain.SnfInvoiceWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -51,6 +54,7 @@ import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilder;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
+import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem;
@@ -94,6 +98,10 @@ public class InvoiceCommands extends BaseShellSupport {
   @ShellMethod("List invoices for account.")
   public void invoicesForAccount(
       @ShellOption(help = "The account ID to list invoices for.") Long accountId,
+      @ShellOption(help = "The minimum invoice month (inclusive) in YYYY-MM",
+          defaultValue = "") String minMonth,
+      @ShellOption(help = "The maximum invoice month (exclusive) in YYYY-MM",
+          defaultValue = "") String maxMonth,
       @ShellOption(help = "The maximum number of results to return, or 0 for unlimited.",
           defaultValue = "0") int max,
       @ShellOption(help = "The result page offset, starting from 1.",
@@ -103,6 +111,22 @@ public class InvoiceCommands extends BaseShellSupport {
       f.setMax(max);
       if (page > 1) {
         f.setOffset((page - 1) * max);
+      }
+    }
+    if (minMonth != null && !minMonth.isEmpty()) {
+      try {
+        f.setStartDate(YearMonth.parse(minMonth).atDay(1));
+      } catch (DateTimeParseException e) {
+        shell.printError("The --min-month value is not valid. Use YYYY-MM syntax.");
+        return;
+      }
+    }
+    if (maxMonth != null && !maxMonth.isEmpty()) {
+      try {
+        f.setEndDate(YearMonth.parse(maxMonth).atDay(1));
+      } catch (DateTimeParseException e) {
+        shell.printError("The --max-month value is not valid. Use YYYY-MM syntax.");
+        return;
       }
     }
     doInvoiceSearch(f);
@@ -265,6 +289,28 @@ public class InvoiceCommands extends BaseShellSupport {
         return c == 2 ? TOP_LEFT : TOP_RIGHT;
       }
     }, null)));
+  }
+  
+  /**
+   * Generate an invoice for an account.
+   * 
+   * @param accountId the account ID
+   * @param month the month, in YYYY-MM format
+   */
+  @ShellMethod("Generate invoice for an account.")
+  @org.springframework.shell.standard.ShellMethodAvailability("adminAvailability")
+  public void generateInvoiceForAccount(
+      @ShellOption(help = "The account ID to generate for.") Long accountId,
+      @ShellOption(help = "The month to generate, in YYYY-MM form.") String month) {
+    YearMonth ym = YearMonth.parse(month);
+    try {
+      AccountTask task = accountService.createInvoiceGenerationTask(accountId, ym);
+      if (task != null) {
+        shell.printSuccess(format("Created invoice generation task %s", task.getId()));
+      }
+    } catch (DataAccessException e) {
+      shell.printError(e.getMessage());
+    }
   }
 
 }

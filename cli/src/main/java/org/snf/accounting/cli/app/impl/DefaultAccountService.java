@@ -22,6 +22,10 @@
 
 package org.snf.accounting.cli.app.impl;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZonedDateTime;
+
 import org.snf.accounting.cli.app.service.AccountService;
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
@@ -31,12 +35,17 @@ import org.snf.accounting.domain.AccountWithBalance;
 import org.snf.accounting.domain.PaymentWithInvoicePayments;
 import org.snf.accounting.domain.SnfInvoiceWithBalance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
+import net.solarnetwork.central.user.billing.snf.domain.AccountTaskType;
+import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
 import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 import net.solarnetwork.central.user.domain.UserLongPK;
@@ -113,6 +122,34 @@ public class DefaultAccountService implements AccountService {
   public FilterResults<PaymentWithInvoicePayments, UserUuidPK> findFilteredPayments(
       PaymentFilter filter) {
     return paymentDao.findFiltered(filter, filter.getSorts(), filter.getOffset(), filter.getMax());
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public AccountTask createInvoiceGenerationTask(final Long accountId, final YearMonth month) {
+    final LocalDate date = month.atDay(1);
+    final Account account = accountDao.get(new UserLongPK(null, accountId));
+    if (account == null) {
+      String err = String.format("Account %d not found.", accountId);
+      throw new EmptyResultDataAccessException(err, 1);
+    }
+    SnfInvoiceFilter f = SnfInvoiceFilter.forAccount(account);
+    f.setStartDate(date);
+    f.setEndDate(date.plusMonths(1));
+    FilterResults<SnfInvoiceWithBalance, UserLongPK> existing = findFilteredInvoices(f);
+    if (existing.getReturnedResultCount() > 0) {
+      SnfInvoiceWithBalance inv = existing.iterator().next();
+      InvoiceImpl invoice = new InvoiceImpl(inv);
+      String err = String.format("Account %d already has invoice %d (INV-%s) for %s.", accountId,
+          inv.getId().getId(), invoice.getInvoiceNumber(), month.toString());
+      throw new DuplicateKeyException(err);
+    }
+
+    ZonedDateTime targetDate = date.atStartOfDay(account.getTimeZone());
+    AccountTask task = AccountTask.newTask(targetDate.toInstant(), AccountTaskType.GenerateInvoice,
+        accountId);
+    accountDao.saveTask(task);
+    return task;
   }
 
 }
