@@ -106,7 +106,7 @@ public class AccountCommands extends BaseShellSupport {
         .column("Time Zone")
         .column("Charged")
         .column("Paid")
-        .column("Due")
+        .column("Balance")
         ;
     Locale locale = Locale.forLanguageTag("en-NZ");
     for (AccountWithBalance account : result) {
