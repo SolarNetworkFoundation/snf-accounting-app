@@ -23,6 +23,9 @@
 package org.snf.accounting.cli.app.config;
 
 import org.snf.accounting.impl.DefaultAccountService;
+import org.snf.accounting.impl.SocketHealthServer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
@@ -35,5 +38,22 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import(DefaultAccountService.class)
 public class ServiceConfig {
+
+  @Value("${app.health.port:9021}")
+  private int healthPort = 9021;
+
+  /**
+   * Get the socket health server.
+   * 
+   * @return health server
+   */
+  @Bean
+  public SocketHealthServer socketHealthServer() {
+    SocketHealthServer health = new SocketHealthServer(healthPort);
+    Thread t = new Thread(health, "SocketHealthServer");
+    t.setDaemon(true);
+    t.start();
+    return health;
+  }
 
 }

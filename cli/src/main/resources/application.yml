@@ -1,5 +1,8 @@
 app:
-# TODO
+  auth:
+    password-file: "classpath:default-passwords.txt"
+  health:
+    port: 9021
 
 logging:
   level:
