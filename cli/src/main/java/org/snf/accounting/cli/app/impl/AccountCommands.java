@@ -76,24 +76,44 @@ public class AccountCommands extends BaseShellSupport {
   }
 
   /**
-   * List the available accounts.
-   */
-  @ShellMethod("Show the available accounts.")
-  public void accountsShow() {
-    doAccountWithBalanceSearch(new AccountFilter());
-  }
-
-  /**
-   * Find accounts by email filter.
+   * List accounts.
    * 
+   * @param accountId
+   *          the account to limit results to
+   * @param userId
+   *          the SolarNetwork user ID to limit results to
    * @param email
-   *          the email substring to filter by
+   *          an email substring to limit results to
+   * @param max
+   *          the maximum number of results, or {@literal 0} for unlimited
+   * @param page
+   *          the page offset, starting from 1
    */
-  @ShellMethod("Find accounts by email.")
-  public void accountsFindEmail(
-      @ShellOption(help = "Email to find (substring match)") String email) {
+  @ShellMethod("List accounts.")
+  public void accountsList(
+      @ShellOption(help = "Email to find (substring match)", defaultValue = "") String email,
+      @ShellOption(help = "The account ID to show.", defaultValue = "0") Long accountId,
+      @ShellOption(help = "The SolarNetwork user ID to show.", defaultValue = "0") Long userId,
+      @ShellOption(help = "The maximum number of results to return, or 0 for unlimited.",
+          defaultValue = "0") int max,
+      @ShellOption(help = "The result page offset, starting from 1.",
+          defaultValue = "1") int page) {
     AccountFilter f = new AccountFilter();
-    f.setEmail(email);
+    if (accountId != null && accountId.longValue() > 0) {
+      f.setAccountId(accountId);
+    }
+    if (userId != null && userId.longValue() > 0) {
+      f.setUserId(userId);
+    }
+    if (max >= 1) {
+      f.setMax(max);
+      if (page > 1) {
+        f.setOffset((page - 1) * max);
+      }
+    }
+    if (email != null && !email.isEmpty()) {
+      f.setEmail(email);
+    }
     doAccountWithBalanceSearch(f);
   }
 

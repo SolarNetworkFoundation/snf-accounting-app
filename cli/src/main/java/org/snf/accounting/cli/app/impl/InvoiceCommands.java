@@ -91,59 +91,10 @@ public class InvoiceCommands extends BaseShellSupport {
   }
 
   /**
-   * List invoices for account.
+   * List invoices across accounts.
    * 
    * @param accountId
-   *          the account ID to show invoices for
-   * @param minMonth
-   *          a minimum invoice date (inclusive)
-   * @param maxMonth
-   *          a maximum invoice date (exclusive)
-   * @param max
-   *          the maximum number of results, or {@literal 0} for unlimited
-   * @param page
-   *          the page offset, starting from 1
-   */
-  @ShellMethod("List invoices for account.")
-  public void invoicesForAccount(
-      @ShellOption(help = "The account ID to list invoices for.") Long accountId,
-      @ShellOption(help = "The minimum invoice month (inclusive) in YYYY-MM",
-          defaultValue = "") String minMonth,
-      @ShellOption(help = "The maximum invoice month (exclusive) in YYYY-MM",
-          defaultValue = "") String maxMonth,
-      @ShellOption(help = "The maximum number of results to return, or 0 for unlimited.",
-          defaultValue = "0") int max,
-      @ShellOption(help = "The result page offset, starting from 1.",
-          defaultValue = "1") int page) {
-    SnfInvoiceFilter f = SnfInvoiceFilter.forAccount(accountId);
-    if (max >= 1) {
-      f.setMax(max);
-      if (page > 1) {
-        f.setOffset((page - 1) * max);
-      }
-    }
-    if (minMonth != null && !minMonth.isEmpty()) {
-      try {
-        f.setStartDate(YearMonth.parse(minMonth).atDay(1));
-      } catch (DateTimeParseException e) {
-        shell.printError("The --min-month value is not valid. Use YYYY-MM syntax.");
-        return;
-      }
-    }
-    if (maxMonth != null && !maxMonth.isEmpty()) {
-      try {
-        f.setEndDate(YearMonth.parse(maxMonth).atDay(1));
-      } catch (DateTimeParseException e) {
-        shell.printError("The --max-month value is not valid. Use YYYY-MM syntax.");
-        return;
-      }
-    }
-    doInvoiceSearch(f);
-  }
-
-  /**
-   * LIst invoices across accounts.
-   * 
+   *          the account to limit results to
    * @param minMonth
    *          a minimum invoice date (inclusive)
    * @param maxMonth
@@ -155,9 +106,11 @@ public class InvoiceCommands extends BaseShellSupport {
    */
   @ShellMethod("List invoices.")
   public void invoicesList(
-      @ShellOption(help = "The minimum invoice month (inclusive) in YYYY-MM",
+      @ShellOption(help = "The account ID to list invoices for.",
+          defaultValue = "0") Long accountId,
+      @ShellOption(help = "The minimum invoice month (inclusive) in YYYY-MM.",
           defaultValue = "") String minMonth,
-      @ShellOption(help = "The maximum invoice month (exclusive) in YYYY-MM",
+      @ShellOption(help = "The maximum invoice month (exclusive) in YYYY-MM.",
           defaultValue = "") String maxMonth,
       @ShellOption(help = "Only include unpaid invoices.", arity = 0) boolean unpaidOnly,
       @ShellOption(help = "The maximum number of results to return, or 0 for unlimited.",
@@ -165,6 +118,9 @@ public class InvoiceCommands extends BaseShellSupport {
       @ShellOption(help = "The result page offset, starting from 1.",
           defaultValue = "1") int page) {
     SnfInvoiceFilter f = new SnfInvoiceFilter();
+    if (accountId != null && accountId.longValue() > 0) {
+      f.setAccountId(accountId);
+    }
     if (max >= 1) {
       f.setMax(max);
       if (page > 1) {

@@ -123,7 +123,7 @@ public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, Use
     }
 
     List<AccountWithBalance> results = selectList(QueryName.FindFilteredBalance.getQueryName(),
-        filter, null, null);
+        filter, filter.getOffset(), filter.getMax());
     return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
         results.size());
   }

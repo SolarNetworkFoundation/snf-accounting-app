@@ -145,6 +145,12 @@
       <if test="email != null">
         AND addr.email LIKE '%' || #{email} || '%'
       </if>
+      <if test="userId != null">
+        AND acct.user_id = #{userId}
+      </if>
+      <if test="accountId != null">
+        AND acct.id = #{accountId}
+      </if>
     </where>
   </sql>
   
