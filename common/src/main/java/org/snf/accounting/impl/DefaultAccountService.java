@@ -159,7 +159,7 @@ public class DefaultAccountService implements AccountService {
     if (existing.getReturnedResultCount() > 0) {
       SnfInvoiceWithBalance inv = existing.iterator().next();
       InvoiceImpl invoice = new InvoiceImpl(inv);
-      String err = String.format("Account %d already has invoice %d (INV-%s) for %s.", accountId,
+      String err = String.format("Account %d already has invoice %d (%s) for %s.", accountId,
           inv.getId().getId(), invoice.getInvoiceNumber(), month.toString());
       throw new DuplicateKeyException(err);
     }

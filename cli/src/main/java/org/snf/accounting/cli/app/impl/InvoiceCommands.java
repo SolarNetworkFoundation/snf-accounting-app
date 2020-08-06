@@ -235,7 +235,7 @@ public class InvoiceCommands extends BaseShellSupport {
     // @formatter:off
     shell.print(format("Invoice %d (%s) - %s - %s (%d) - %s - %s - %s", 
         inv.getId().getId(), 
-        getBold(format("INV-%s",invoice.getInvoiceNumber())),
+        getBold(invoice.getInvoiceNumber()),
         ISO_DATE.format(inv.getStartDate()),
         inv.getAddress().getName(),
         inv.getAccountId(),
@@ -353,7 +353,7 @@ public class InvoiceCommands extends BaseShellSupport {
       InvoiceImpl invoice = new InvoiceImpl(inv);
       t.line(asList(
           inv.getId().getId(),
-          format("INV-%s", invoice.getInvoiceNumber()),
+          invoice.getInvoiceNumber(),
           ISO_DATE.format(inv.getStartDate()),
           format("%s (%d)", inv.getAddress().getEmail(), inv.getAccountId()),
           inv.getItemCount(),
