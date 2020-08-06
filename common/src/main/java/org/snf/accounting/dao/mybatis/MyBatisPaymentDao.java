@@ -22,15 +22,21 @@
 
 package org.snf.accounting.dao.mybatis;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 import org.mybatis.spring.SqlSessionTemplate;
 import org.snf.accounting.dao.PaymentDao;
+import org.snf.accounting.domain.ExtendedPaymentFilter;
 import org.snf.accounting.domain.PaymentWithInvoicePayments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
+import net.solarnetwork.central.user.billing.snf.domain.Payment;
 import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
 import net.solarnetwork.central.user.domain.UserUuidPK;
 import net.solarnetwork.dao.BasicFilterResults;
@@ -50,7 +56,9 @@ public class MyBatisPaymentDao extends
   /** Query name enumeration. */
   public enum QueryName {
 
-    FindFiltered("find-Payment-for-filter");
+    FindFiltered("find-Payment-for-filter"),
+
+    AddPayment("add-payment");
 
     private final String queryName;
 
@@ -104,10 +112,12 @@ public class MyBatisPaymentDao extends
       }
     }
 
+    final ExtendedPaymentFilter extFilter = ExtendedPaymentFilter.forFilter(filter);
+
     // attempt count first, if max NOT specified as -1 and NOT a mostRecent query
     Long totalCount = null;
     if (max == null || max.intValue() != -1) {
-      PaymentFilter countFilter = filter.clone();
+      PaymentFilter countFilter = extFilter.clone();
       countFilter.setOffset(null);
       countFilter.setMax(null);
       Number n = getSqlSession().selectOne(QueryName.FindFiltered.getCountQueryName(), countFilter);
@@ -117,9 +127,40 @@ public class MyBatisPaymentDao extends
     }
 
     List<PaymentWithInvoicePayments> results = selectList(QueryName.FindFiltered.getQueryName(),
-        filter, null, null);
+        extFilter, null, null);
     return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
         results.size());
+  }
+
+  @Override
+  public PaymentWithInvoicePayments addPayment(Payment payment, Iterable<Long> invoiceIds) {
+    Map<String, Object> params = new HashMap<>(2);
+    params.put("payment", payment);
+    if (invoiceIds != null) {
+      Long[] ids = StreamSupport.stream(invoiceIds.spliterator(), false).toArray(Long[]::new);
+      if (ids.length > 0) {
+        params.put("invoiceIds", ids);
+      }
+    }
+    Payment entity = selectFirst(QueryName.AddPayment.getQueryName(), params);
+
+    ExtendedPaymentFilter filter = new ExtendedPaymentFilter();
+    filter.setPaymentIds(new UUID[] { entity.getId().getId() });
+    FilterResults<PaymentWithInvoicePayments, UserUuidPK> results = findFiltered(filter, null, null,
+        null);
+    if (results.getReturnedResultCount() > 0) {
+      return results.iterator().next();
+    }
+
+    // shouldn't really arrive here
+    PaymentWithInvoicePayments result = new PaymentWithInvoicePayments(entity.getId(),
+        entity.getAccountId(), entity.getCreated());
+    result.setAmount(entity.getAmount());
+    result.setCurrencyCode(entity.getCurrencyCode());
+    result.setExternalKey(entity.getExternalKey());
+    result.setPaymentType(entity.getPaymentType());
+    result.setReference(entity.getReference());
+    return result;
   }
 
 }

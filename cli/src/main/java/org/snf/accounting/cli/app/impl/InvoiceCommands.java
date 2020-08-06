@@ -325,6 +325,19 @@ public class InvoiceCommands extends BaseShellSupport {
     });
     FilterResults<SnfInvoiceWithBalance, UserLongPK> result = accountService
         .findFilteredInvoices(f);
+    renderInvoiceTable(shell, result);
+  }
+
+  /**
+   * Render an invoice table from invoice results.
+   * 
+   * @param shell
+   *          the shell
+   * @param result
+   *          the results
+   */
+  public static void renderInvoiceTable(SshShellHelper shell,
+      FilterResults<SnfInvoiceWithBalance, UserLongPK> result) {
     // @formatter:off
     SimpleTableBuilder t = SimpleTable.builder()
         .column("ID")
@@ -350,20 +363,24 @@ public class InvoiceCommands extends BaseShellSupport {
               inv.getCurrencyCode(), inv.getTotalAmount().subtract(inv.getPaidAmount()))
           ));
     }
-    shell.print(shell.renderTable(buildTable(t.build(), new IntFunction<Iterable<Aligner>>() {
+    shell.print(shell.renderTable(BaseShellSupport.buildTable(shell, t.build(),
+        new IntFunction<Iterable<Aligner>>() {
 
-      @Override
-      public Iterable<Aligner> apply(int c) {
-        return c == 2 || c == 3 ? TOP_LEFT : TOP_RIGHT;
-      }
-    }, null)));
+        @Override
+        public Iterable<Aligner> apply(int c) {
+          return c == 2 || c == 3 ? TOP_LEFT : TOP_RIGHT;
+        }
+      }, null)));
+    // @formatter:on
   }
-  
+
   /**
    * Generate an invoice for an account.
    * 
-   * @param accountId the account ID
-   * @param month the month, in YYYY-MM format
+   * @param accountId
+   *          the account ID
+   * @param month
+   *          the month, in YYYY-MM format
    */
   @ShellMethod("Generate invoice for an account.")
   @org.springframework.shell.standard.ShellMethodAvailability("adminAvailability")
@@ -384,12 +401,12 @@ public class InvoiceCommands extends BaseShellSupport {
   /**
    * Deliver an invoice for an account.
    * 
-   * @param invoiceId the invoice ID
+   * @param invoiceId
+   *          the invoice ID
    */
   @ShellMethod("Deliver invoice for an account.")
   @org.springframework.shell.standard.ShellMethodAvailability("adminAvailability")
-  public void deliverInvoice(
-      @ShellOption(help = "The invoice ID to deliver.") Long invoiceId) {
+  public void deliverInvoice(@ShellOption(help = "The invoice ID to deliver.") Long invoiceId) {
     try {
       AccountTask task = accountService.createInvoiceDeliverTask(invoiceId);
       if (task != null) {

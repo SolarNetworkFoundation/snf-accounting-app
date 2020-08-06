@@ -26,12 +26,14 @@ import static net.solarnetwork.central.user.billing.snf.domain.AccountTask.newTa
 import static net.solarnetwork.central.user.billing.snf.domain.AccountTaskType.DeliverInvoice;
 import static net.solarnetwork.central.user.billing.snf.domain.AccountTaskType.GenerateInvoice;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
@@ -52,6 +54,7 @@ import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
 import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
+import net.solarnetwork.central.user.billing.snf.domain.Payment;
 import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
@@ -104,6 +107,17 @@ public class DefaultAccountService implements AccountService {
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
+  public Account getAccount(Long accountId) {
+    Account account = accountDao.get(new UserLongPK(null, accountId));
+    if (account == null) {
+      String err = String.format("Account %d not found.", accountId);
+      throw new EmptyResultDataAccessException(err, 1);
+    }
+    return account;
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
   public FilterResults<AccountWithBalance, UserLongPK> findFilteredBalances(AccountFilter filter) {
     return accountDao.findFilteredBalances(filter, filter.getSorts(), filter.getOffset(),
         filter.getMax());
@@ -136,11 +150,8 @@ public class DefaultAccountService implements AccountService {
   @Override
   public AccountTask createInvoiceGenerationTask(final Long accountId, final YearMonth month) {
     final LocalDate date = month.atDay(1);
-    final Account account = accountDao.get(new UserLongPK(null, accountId));
-    if (account == null) {
-      String err = String.format("Account %d not found.", accountId);
-      throw new EmptyResultDataAccessException(err, 1);
-    }
+    final Account account = getAccount(accountId);
+
     SnfInvoiceFilter f = SnfInvoiceFilter.forAccount(account);
     f.setStartDate(date);
     f.setEndDate(date.plusMonths(1));
@@ -173,6 +184,17 @@ public class DefaultAccountService implements AccountService {
     AccountTask task = newTask(Instant.now(), DeliverInvoice, invoice.getAccountId(), taskData);
     accountDao.saveTask(task);
     return task;
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public PaymentWithInvoicePayments addPayment(Long accountId, Set<Long> invoiceIds,
+      BigDecimal amount, Instant paymentDate, String ref, String externalKey) {
+    Payment payment = new Payment(null, accountId, paymentDate);
+    payment.setAmount(amount);
+    payment.setReference(ref);
+    payment.setExternalKey(externalKey);
+    return paymentDao.addPayment(payment, invoiceIds);
   }
 
 }

@@ -129,6 +129,9 @@
             <if test="endDate != null">
               AND pay1.created &lt; (#{filter.endDate,javaType=java.time.LocalDate,jdbcType=DATE}::timestamp AT TIME ZONE addr.time_zone)
             </if>
+            <if test="paymentIds != null and paymentIds.length > 0">
+              AND pay1.id = ANY(#{paymentIds,jdbcType=ARRAY,typeHandler=net.solarnetwork.central.dao.mybatis.type.UUIDArrayTypeHandler}::uuid[])
+            </if>
           </where>
           ORDER BY
           <choose>
@@ -159,10 +162,13 @@
       <if test="endDate != null">
         AND pay.created &lt; (#{filter.endDate,javaType=java.time.LocalDate,jdbcType=DATE}::timestamp AT TIME ZONE addr.time_zone)
       </if>
+      <if test="paymentIds != null and paymentIds.length > 0">
+        AND pay.id = ANY(#{paymentIds,jdbcType=ARRAY,typeHandler=net.solarnetwork.central.dao.mybatis.type.UUIDArrayTypeHandler}::uuid[])
+      </if>
     </where>
   </sql>
 
-  <select id="find-Payment-for-filter" parameterType="net.solarnetwork.central.user.billing.snf.domain.PaymentFilter" 
+  <select id="find-Payment-for-filter" parameterType="org.snf.accounting.domain.ExtendedPaymentFilter" 
       resultMap="Payment-FullResult" fetchSize="50" resultSetType="FORWARD_ONLY">
     SELECT
       <include refid="fragment-Payment-full-result"/>
@@ -188,10 +194,40 @@
     </choose>
   </select>
 
-  <select id="find-Payment-for-filter-count" parameterType="net.solarnetwork.central.user.billing.snf.domain.PaymentFilter"
+  <select id="find-Payment-for-filter-count" parameterType="org.snf.accounting.domain.ExtendedPaymentFilter"
       resultType="long">
     SELECT count(DISTINCT pay.id)
     <include refid="find-Payment-for-filter-body"/>
+  </select>
+  
+  <resultMap id="Payment-Result" type="net.solarnetwork.central.user.billing.snf.domain.Payment">
+    <constructor>
+      <idArg column="bill_payment_id" javaType="java.util.UUID"/>
+      <arg column="bill_account_user_id" javaType="Long"/>
+      <arg column="bill_payment_acct_id" javaType="Long"/>
+      <arg column="bill_payment_created" javaType="java.time.Instant"/>
+    </constructor>
+    <result property="paymentType" column="bill_payment_pay_type" javaType="net.solarnetwork.central.user.billing.snf.domain.PaymentType" typeHandler="net.solarnetwork.central.dao.mybatis.type.CodedValueTypeHandler"/>
+    <result property="amount" column="bill_payment_amount"/>
+    <result property="currencyCode" column="bill_payment_currency"/>
+    <result property="externalKey" column="bill_payment_ext_key"/>
+    <result property="reference" column="bill_payment_ref"/>
+  </resultMap>
+
+  <select id="add-payment" parameterType="map" useCache="false" flushCache="true" resultMap="Payment-Result">
+    SELECT 
+      <include refid="fragment-Payment-full-result"/>
+      , acct.user_id AS bill_account_user_id
+    FROM solarbill.add_invoice_payments(
+      accountid => #{payment.accountId,javaType=long,jdbcType=BIGINT}
+      , pay_amount => #{payment.amount,javaType=java.math.BigDecimal,jdbcType=NUMERIC}
+      , pay_date => #{payment.created,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+      <if test="invoiceIds != null and invoiceIds.length > 0">
+      , inv_ids => #{invoiceIds,jdbcType=ARRAY,typeHandler=net.solarnetwork.central.dao.mybatis.type.LongArrayTypeHandler}
+      </if>
+    ) pay
+    INNER JOIN 
+      solarbill.bill_account acct ON acct.id = pay.acct_id
   </select>
 
 </mapper>

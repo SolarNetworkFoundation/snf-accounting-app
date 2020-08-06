@@ -24,6 +24,8 @@ package org.snf.accounting.dao.mybatis;
 
 import java.util.List;
 
+import org.snf.accounting.domain.ExtendedSnfInvoiceFilter;
+
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
@@ -94,10 +96,12 @@ public class MyBatisSnfInvoiceDao extends BaseMyBatisGenericDaoSupport<SnfInvoic
       }
     }
 
+    final ExtendedSnfInvoiceFilter extFilter = ExtendedSnfInvoiceFilter.forFilter(filter);
+
     // attempt count first, if max NOT specified as -1 and NOT a mostRecent query
     Long totalCount = null;
     if (max == null || max.intValue() != -1) {
-      SnfInvoiceFilter countFilter = filter.clone();
+      SnfInvoiceFilter countFilter = extFilter.clone();
       countFilter.setOffset(null);
       countFilter.setMax(null);
       Number n = getSqlSession().selectOne(QueryName.FindFiltered.getCountQueryName(), countFilter);
@@ -106,7 +110,7 @@ public class MyBatisSnfInvoiceDao extends BaseMyBatisGenericDaoSupport<SnfInvoic
       }
     }
 
-    List<SnfInvoice> results = selectList(QueryName.FindFiltered.getQueryName(), filter, null,
+    List<SnfInvoice> results = selectList(QueryName.FindFiltered.getQueryName(), extFilter, null,
         null);
     return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
         results.size());

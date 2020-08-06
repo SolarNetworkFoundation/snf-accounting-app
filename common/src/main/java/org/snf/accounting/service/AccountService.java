@@ -22,7 +22,10 @@
 
 package org.snf.accounting.service;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.YearMonth;
+import java.util.Set;
 
 import org.snf.accounting.domain.AccountFilter;
 import org.snf.accounting.domain.AccountWithBalance;
@@ -51,6 +54,17 @@ public interface AccountService {
    * @return the accounts, never {@literal null}
    */
   Iterable<Account> allAccounts();
+
+  /**
+   * Get a specific account.
+   * 
+   * @param accountId
+   *          the account ID
+   * @return the account
+   * @throws org.springframework.dao.EmptyResultDataAccessException
+   *           if the account is not found
+   */
+  Account getAccount(Long accountId);
 
   /**
    * Find accounts with balance info.
@@ -107,5 +121,25 @@ public interface AccountService {
    * @return the account task
    */
   AccountTask createInvoiceDeliverTask(final Long invoiceId);
+
+  /**
+   * Add payment to an account, associated with invoices.
+   * 
+   * @param accountId
+   *          the account ID
+   * @param invoiceIds
+   *          the invoice IDs to associate with the payment
+   * @param amount
+   *          the payment amount
+   * @param paymentDate
+   *          the payment date
+   * @param ref
+   *          the optional payment reference
+   * @param externalKey
+   *          the optional payment external key
+   * @return the payment entity
+   */
+  PaymentWithInvoicePayments addPayment(Long accountId, Set<Long> invoiceIds, BigDecimal amount,
+      Instant paymentDate, String ref, String externalKey);
 
 }

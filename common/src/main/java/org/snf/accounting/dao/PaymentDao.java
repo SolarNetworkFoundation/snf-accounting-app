@@ -39,4 +39,15 @@ import net.solarnetwork.dao.GenericDao;
 public interface PaymentDao extends GenericDao<PaymentWithInvoicePayments, UserUuidPK>,
     FilterableDao<PaymentWithInvoicePayments, UserUuidPK, PaymentFilter> {
 
+  /**
+   * Add a payment.
+   * 
+   * @param payment
+   *          the payment details; the ID will be ignored
+   * @param invoiceIds
+   *          the optional invoice IDs to associate with the payment
+   * @return the resulting payment entity
+   */
+  PaymentWithInvoicePayments addPayment(Payment payment, Iterable<Long> invoiceIds);
+
 }

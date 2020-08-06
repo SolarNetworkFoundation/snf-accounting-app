@@ -61,6 +61,8 @@ import com.github.fonimus.ssh.shell.SimpleTable;
 import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilderListener;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 
+import net.solarnetwork.util.StringUtils;
+
 /**
  * Base shell support class.
  * 
@@ -94,6 +96,38 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
     ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
     ms.setBasenames(BaseShellSupport.class.getName(), clazz.getName());
     return ms;
+  }
+
+  /**
+   * Resolve a localized message.
+   * 
+   * @param key
+   *          the message key
+   * @param defaultMessage
+   *          the default message
+   * @param args
+   *          the message arguments
+   * @return the message
+   */
+  protected String i18n(String key, String defaultMessage, Object... args) {
+    return messageSource.getMessage(key, args, defaultMessage, actorLocale());
+  }
+
+  /**
+   * Prompt for a "Is this OK?" yes/no response.
+   * 
+   * @param key
+   *          the i18n message key
+   * @param defaultMessage
+   *          the default message
+   * @param args
+   *          the message args
+   * @return {@literal true} if user responds in the affirmative
+   */
+  protected boolean promptConfirmOk(String key, String defaultMessage, Object... args) {
+    String isOk = i18n("ask.isThatOk", null, "Is that OK? (y/n)", actorLocale());
+    String response = shell.read(shell.getWarning(i18n(key, defaultMessage, args) + " " + isOk));
+    return StringUtils.parseBoolean(response);
   }
 
   /**
@@ -336,6 +370,24 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
    */
   protected Table buildTable(SimpleTable simpleTable, IntFunction<Iterable<Aligner>> alignments,
       BiFunction<Integer, Integer, Formatter> formatters) {
+    return buildTable(shell, simpleTable, alignments, formatters);
+  }
+
+  /**
+   * Build a table with column alignments.
+   * 
+   * @param shell
+   *          the shell
+   * @param simpleTable
+   *          the table
+   * @param alignments
+   *          the alignment supplier; will be passed the 0-based column index and should not return
+   *          {@literal null}
+   * @return the table
+   */
+  public static Table buildTable(SshShellHelper shell, SimpleTable simpleTable,
+      IntFunction<Iterable<Aligner>> alignments,
+      BiFunction<Integer, Integer, Formatter> formatters) {
     simpleTable.setTableBuilderListener(new SimpleTableBuilderListener() {
 
       @Override
@@ -374,6 +426,22 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
    */
   protected Table buildTable(SimpleTable simpleTable,
       CoordinateVisitor<CellMatcherStub> cellVisitor) {
+    return buildTable(shell, simpleTable, cellVisitor);
+  }
+
+  /**
+   * Build a table with a cell customizer.
+   * 
+   * @param shell
+   *          the shell
+   * @param simpleTable
+   *          the simple table
+   * @param cellVisitor
+   *          the visitor
+   * @return the table
+   */
+  public static Table buildTable(SshShellHelper shell, SimpleTable simpleTable,
+      CoordinateVisitor<CellMatcherStub> cellVisitor) {
     if (cellVisitor != null) {
       simpleTable.setTableBuilderListener(new SimpleTableBuilderListener() {
 
@@ -398,7 +466,7 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
    * 
    * @return the locale
    */
-  protected Locale actorLocale() {
+  public static Locale actorLocale() {
     Locale l = ShellUtils.clientLocale();
     return (l != null ? l : DEFAULT_LOCALE);
   }

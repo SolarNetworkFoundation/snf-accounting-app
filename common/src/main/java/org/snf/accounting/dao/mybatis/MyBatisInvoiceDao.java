@@ -25,6 +25,7 @@ package org.snf.accounting.dao.mybatis;
 import java.util.List;
 
 import org.mybatis.spring.SqlSessionTemplate;
+import org.snf.accounting.domain.ExtendedSnfInvoiceFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -104,10 +105,12 @@ public class MyBatisInvoiceDao extends BaseMyBatisGenericDaoSupport<SnfInvoice, 
       }
     }
 
+    final ExtendedSnfInvoiceFilter extFilter = ExtendedSnfInvoiceFilter.forFilter(filter);
+
     // attempt count first, if max NOT specified as -1 and NOT a mostRecent query
     Long totalCount = null;
     if (max == null || max.intValue() != -1) {
-      SnfInvoiceFilter countFilter = filter.clone();
+      SnfInvoiceFilter countFilter = extFilter.clone();
       countFilter.setOffset(null);
       countFilter.setMax(null);
       Number n = getSqlSession().selectOne(QueryName.FindFiltered.getCountQueryName(), countFilter);
@@ -116,7 +119,7 @@ public class MyBatisInvoiceDao extends BaseMyBatisGenericDaoSupport<SnfInvoice, 
       }
     }
 
-    List<SnfInvoice> results = selectList(QueryName.FindFiltered.getQueryName(), filter, null,
+    List<SnfInvoice> results = selectList(QueryName.FindFiltered.getQueryName(), extFilter, null,
         null);
     return new BasicFilterResults<>(results, totalCount, offset != null ? offset.intValue() : 0,
         results.size());

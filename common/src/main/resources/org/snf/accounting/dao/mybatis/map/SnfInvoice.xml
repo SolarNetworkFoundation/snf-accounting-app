@@ -136,6 +136,9 @@
               <if test="userId != null">
                 AND acct1.user_id = #{userId}
               </if>
+              <if test="invoiceIds != null and invoiceIds.length > 0">
+                AND inv1.id = ANY(#{invoiceIds,jdbcType=ARRAY,typeHandler=net.solarnetwork.central.dao.mybatis.type.LongArrayTypeHandler})
+              </if>
               <if test="accountId != null">
                 AND inv1.acct_id = #{accountId}
               </if>
@@ -167,6 +170,9 @@
           <if test="userId != null">
             AND acct.user_id = #{userId}
           </if>
+          <if test="invoiceIds != null and invoiceIds.length > 0">
+            AND inv.id = ANY(#{invoiceIds,jdbcType=ARRAY,typeHandler=net.solarnetwork.central.dao.mybatis.type.LongArrayTypeHandler})
+          </if>
           <if test="accountId != null">
             AND inv.acct_id = #{accountId}
           </if>
@@ -181,7 +187,7 @@
     </where>
   </sql>
   
-  <select id="find-SnfInvoice-for-filter" parameterType="net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter" 
+  <select id="find-SnfInvoice-for-filter" parameterType="org.snf.accounting.domain.ExtendedSnfInvoiceFilter" 
       resultMap="SnfInvoice-FullResult" fetchSize="50" resultSetType="FORWARD_ONLY">
     SELECT
       <include refid="fragment-SnfInvoice-full-result"/>
@@ -205,7 +211,7 @@
     </choose>
   </select>
 
-  <select id="find-SnfInvoice-for-filter-count" parameterType="net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter"
+  <select id="find-SnfInvoice-for-filter-count" parameterType="org.snf.accounting.domain.ExtendedSnfInvoiceFilter"
       resultType="long">
     SELECT count(DISTINCT inv.id)
     <include refid="find-SnfInvoice-for-filter-body"/>
