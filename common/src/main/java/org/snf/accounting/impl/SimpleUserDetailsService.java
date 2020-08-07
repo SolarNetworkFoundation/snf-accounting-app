@@ -20,20 +20,20 @@
  * ==================================================================
  */
 
-package org.snf.accounting.cli.app.impl;
+package org.snf.accounting.impl;
 
 import static java.util.stream.Collectors.toCollection;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.jline.utils.InputStreamReader;
 import org.springframework.core.io.Resource;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -99,7 +99,7 @@ public class SimpleUserDetailsService implements UserDetailsService {
     if (user == null) {
       throw new UsernameNotFoundException("User not available.");
     }
-    return user;
+    return User.withUserDetails(user).build();
   }
 
 }

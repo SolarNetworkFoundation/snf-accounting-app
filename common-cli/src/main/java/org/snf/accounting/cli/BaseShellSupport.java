@@ -22,6 +22,10 @@
 
 package org.snf.accounting.cli;
 
+import static com.github.fonimus.ssh.shell.SshShellHelper.at;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 import static org.snf.accounting.cli.ShellUtils.getBoldColored;
 import static org.snf.accounting.cli.ShellUtils.wall;
 
@@ -33,6 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +47,21 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.shell.Availability;
+import org.springframework.shell.table.Aligner;
+import org.springframework.shell.table.Formatter;
+import org.springframework.shell.table.SimpleHorizontalAligner;
+import org.springframework.shell.table.SimpleVerticalAligner;
+import org.springframework.shell.table.Table;
+import org.springframework.shell.table.TableBuilder;
+import org.springframework.shell.table.TableBuilder.CellMatcherStub;
 
 import com.github.fonimus.ssh.shell.PromptColor;
+import com.github.fonimus.ssh.shell.SimpleTable;
+import com.github.fonimus.ssh.shell.SimpleTable.SimpleTableBuilderListener;
 import com.github.fonimus.ssh.shell.SshShellHelper;
+
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Base shell support class.
@@ -52,6 +70,9 @@ import com.github.fonimus.ssh.shell.SshShellHelper;
  * @version 1.0
  */
 public class BaseShellSupport extends BaseMessageSourceSupport {
+
+  /** The default locale to use for the app. */
+  public static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("en-NZ");
 
   /** The shell helper. */
   protected final SshShellHelper shell;
@@ -75,6 +96,38 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
     ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
     ms.setBasenames(BaseShellSupport.class.getName(), clazz.getName());
     return ms;
+  }
+
+  /**
+   * Resolve a localized message.
+   * 
+   * @param key
+   *          the message key
+   * @param defaultMessage
+   *          the default message
+   * @param args
+   *          the message arguments
+   * @return the message
+   */
+  protected String i18n(String key, String defaultMessage, Object... args) {
+    return messageSource.getMessage(key, args, defaultMessage, actorLocale());
+  }
+
+  /**
+   * Prompt for a "Is this OK?" yes/no response.
+   * 
+   * @param key
+   *          the i18n message key
+   * @param defaultMessage
+   *          the default message
+   * @param args
+   *          the message args
+   * @return {@literal true} if user responds in the affirmative
+   */
+  protected boolean promptConfirmOk(String key, String defaultMessage, Object... args) {
+    String isOk = i18n("ask.isThatOk", null, "Is that OK? (y/n)", actorLocale());
+    String response = shell.read(shell.getWarning(i18n(key, defaultMessage, args) + " " + isOk));
+    return StringUtils.parseBoolean(response);
   }
 
   /**
@@ -286,4 +339,147 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
     wall(banner);
   }
 
+  /** Align top left. */
+  public static final List<Aligner> TOP_LEFT = unmodifiableList(
+      asList(SimpleVerticalAligner.top, SimpleHorizontalAligner.left));
+
+  /** Align top right. */
+  public static final List<Aligner> TOP_RIGHT = unmodifiableList(
+      asList(SimpleVerticalAligner.top, SimpleHorizontalAligner.right));
+
+  /**
+   * Renders table in current terminal.
+   *
+   * @param table
+   *          built table
+   * @return table as string
+   */
+  public String renderTable(Table table) {
+    return table.render(shell.terminalSize().getColumns());
+  }
+
+  /**
+   * Build a table with column alignments.
+   * 
+   * @param simpleTable
+   *          the table
+   * @param alignments
+   *          the alignment supplier; will be passed the 0-based column index and should not return
+   *          {@literal null}
+   * @return the table
+   */
+  protected Table buildTable(SimpleTable simpleTable, IntFunction<Iterable<Aligner>> alignments,
+      BiFunction<Integer, Integer, Formatter> formatters) {
+    return buildTable(shell, simpleTable, alignments, formatters);
+  }
+
+  /**
+   * Build a table with column alignments.
+   * 
+   * @param shell
+   *          the shell
+   * @param simpleTable
+   *          the table
+   * @param alignments
+   *          the alignment supplier; will be passed the 0-based column index and should not return
+   *          {@literal null}
+   * @return the table
+   */
+  public static Table buildTable(SshShellHelper shell, SimpleTable simpleTable,
+      IntFunction<Iterable<Aligner>> alignments,
+      BiFunction<Integer, Integer, Formatter> formatters) {
+    simpleTable.setTableBuilderListener(new SimpleTableBuilderListener() {
+
+      @Override
+      public void onBuilt(TableBuilder tableBuilder) {
+        final int rowCount = simpleTable.getLines().size()
+            + (simpleTable.isDisplayHeaders() ? 1 : 0);
+        final int colCount = simpleTable.getColumns().size();
+        for (int r = 0; r < rowCount; r++) {
+          for (int c = 0; c < colCount; c++) {
+            if (alignments != null) {
+              for (Aligner lineAligner : alignments.apply(c)) {
+                tableBuilder.on(at(r, c)).addAligner(lineAligner);
+              }
+            }
+            if (formatters != null) {
+              Formatter f = formatters.apply(r, c);
+              if (f != null) {
+                tableBuilder.on(at(r, c)).addFormatter(f);
+              }
+            }
+          }
+        }
+      }
+    });
+    return shell.buildTable(simpleTable);
+  }
+
+  /**
+   * Build a table with a cell customizer.
+   * 
+   * @param simpleTable
+   *          the simple table
+   * @param cellVisitor
+   *          the visitor
+   * @return the table
+   */
+  protected Table buildTable(SimpleTable simpleTable,
+      CoordinateVisitor<CellMatcherStub> cellVisitor) {
+    return buildTable(shell, simpleTable, cellVisitor);
+  }
+
+  /**
+   * Build a table with a cell customizer.
+   * 
+   * @param shell
+   *          the shell
+   * @param simpleTable
+   *          the simple table
+   * @param cellVisitor
+   *          the visitor
+   * @return the table
+   */
+  public static Table buildTable(SshShellHelper shell, SimpleTable simpleTable,
+      CoordinateVisitor<CellMatcherStub> cellVisitor) {
+    if (cellVisitor != null) {
+      simpleTable.setTableBuilderListener(new SimpleTableBuilderListener() {
+
+        @Override
+        public void onBuilt(TableBuilder tableBuilder) {
+          final int rowCount = simpleTable.getLines().size()
+              + (simpleTable.isDisplayHeaders() ? 1 : 0);
+          final int colCount = simpleTable.getColumns().size();
+          for (int r = 0; r < rowCount; r++) {
+            for (int c = 0; c < colCount; c++) {
+              cellVisitor.visit(c, r, tableBuilder.on(at(r, c)));
+            }
+          }
+        }
+      });
+    }
+    return shell.buildTable(simpleTable);
+  }
+
+  /**
+   * Get the locale of the current actor (logged in user).
+   * 
+   * @return the locale
+   */
+  public static Locale actorLocale() {
+    Locale l = ShellUtils.clientLocale();
+    return (l != null ? l : DEFAULT_LOCALE);
+  }
+
+  /**
+   * Check for admin-level authorization.
+   * 
+   * @return the availability
+   */
+  public Availability adminAvailability() {
+    if (!shell.checkAuthorities(singletonList("ADMIN"))) {
+      return Availability.unavailable("you are not authorized to execute that command");
+    }
+    return Availability.available();
+  }
 }

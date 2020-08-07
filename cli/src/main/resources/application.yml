@@ -1,12 +1,23 @@
 app:
-# TODO
+  auth:
+    password-file: "classpath:default-passwords.txt"
+  health:
+    port: 9021
 
 logging:
   level:
     ROOT: INFO
+    org.mybatis.spring.mapper.ClassPathMapperScanner: OFF
   pattern:
     console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+  mapper-locations: "classpath:org/snf/accounting/dao/mybatis/map/*.xml"
 
 spring:
   datasource:
@@ -15,6 +26,11 @@ spring:
       connectionTimeout: 30000
       idleTimeout: 600000
       maxLifetime: 1800000
+    url: jdbc:postgresql://localhost:5496/solarnetwork
+    username: solarnet
+    password: solarnet
+    platform: postgres
+    initialize: false
 
 ssh:
   shell:
@@ -38,14 +54,7 @@ debugMode: true
 
 logging:
   level:
-    com.github.fonimus: DEBUG
-    org.springframework.boot.autoconfigure: INFO
+    org.snf.accounting.dao.mybatis: TRACE
 
 spring:
   profiles: development
-  datasource:
-    url: jdbc:postgresql://localhost:5496/solarnetwork
-    username: solarnet
-    password: solarnet
-    platform: postgres
-    initialize: false

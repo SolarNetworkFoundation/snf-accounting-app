@@ -24,21 +24,42 @@ checkstyle {
 	toolVersion = "${checkstyleVersion}"
 	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
 }
-	
+
+configurations {
+	all*.exclude group: 'org.apache.commons', module: 'commons-compress'
+	all*.exclude group: 'org.apache.tomcat', module: 'tomcat-jdbc'
+	all*.exclude group: 'org.eclipse.virgo.mirrored'
+	all*.exclude group: 'org.springframework', module: 'spring-messaging'
+	all*.exclude group: 'org.springframework', module: 'spring-websocket'
+	all*.exclude group: 'javax.servlet'
+	all*.exclude group: 'javax.servlet.jsp'
+	all*.exclude group: 'net.sf.supercsv'
+	all*.exclude group: 'net.solarnetwork.common', module: 'net.solarnetwork.common.web'
+	all*.exclude group: 'net.solarnetwork.central', module: 'net.solarnetwork.central.common.security'
+}
+
 dependencies {
 	implementation project(':snf-accounting-common')
 	implementation project(':snf-accounting-common-cli')
 
-	// spring support
+	// Spring support
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	
+	// DB support
+	implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${myBatisStarterVersion}"
+	
 	// CLI support
-	implementation "com.github.fonimus:ssh-shell-spring-boot-starter:${sshShellVersion}"
-
+	implementation "com.github.fonimus:ssh-shell-spring-boot-starter:${sshShellVersion}"	
+	
+	// SN support
+	implementation "net.solarnetwork.central:net.solarnetwork.central.common.dao.mybatis:2.6.0"
+	implementation "net.solarnetwork.central:net.solarnetwork.central.user.billing.snf:${snfBillingVersion}"
+	
 	// Utilities
-	implementation "org.slf4j:slf4j-api:${slf4jVersion}"
 	implementation "com.github.davidmoten:word-wrap:${wordWrapVersion}"
+	implementation "javax.annotation:javax.annotation-api:${javaxAnnotationVersion}"
+	implementation "org.slf4j:slf4j-api:${slf4jVersion}"
 	
 	// Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

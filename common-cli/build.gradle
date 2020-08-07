@@ -23,12 +23,29 @@ dependencyManagement {
 	}
 }
 
+configurations {
+	all*.exclude group: 'org.apache.commons', module: 'commons-compress'
+	all*.exclude group: 'org.apache.tomcat', module: 'tomcat-jdbc'
+	all*.exclude group: 'org.eclipse.virgo.mirrored'
+	all*.exclude group: 'org.springframework', module: 'spring-messaging'
+	all*.exclude group: 'org.springframework', module: 'spring-websocket'
+	all*.exclude group: 'javax.servlet'
+	all*.exclude group: 'javax.servlet.jsp'
+	all*.exclude group: 'net.sf.supercsv'
+	all*.exclude group: 'net.solarnetwork.common', module: 'net.solarnetwork.common.web'
+	all*.exclude group: 'net.solarnetwork.central', module: 'net.solarnetwork.central.common.security'
+}
+
 dependencies {
 	// spring support
 	implementation 'org.springframework.boot:spring-boot-starter'
 	
 	// CLI support
 	implementation "com.github.fonimus:ssh-shell-spring-boot-starter:${sshShellVersion}"
+
+	// SN
+	implementation "net.solarnetwork.central:net.solarnetwork.central.common.dao.mybatis:2.6.0"
+	implementation "net.solarnetwork.central:net.solarnetwork.central.user.billing.snf:${snfBillingVersion}"
 
 	// Utilities
 	implementation 'org.slf4j:slf4j-api'

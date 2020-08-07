@@ -22,6 +22,10 @@
 
 package org.snf.accounting.cli;
 
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.sshd.server.Environment;
 import org.davidmoten.text.utils.WordWrap;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -113,6 +117,32 @@ public class ShellUtils {
    */
   public static String wrap(CharSequence message) {
     return wrap(message, SHELL_MAX_COLS);
+  }
+
+  /**
+   * Get the locale of the client user.
+   * 
+   * @return the locale, or {@literal null} if not known
+   */
+  public static Locale clientLocale() {
+    Environment sshEnv = TrackingSshShellCommandFactory.sshEnvironment();
+    if (sshEnv != null) {
+      Map<String, String> env = sshEnv.getEnv();
+      if (env != null) {
+        String lang = env.get("LANG");
+        if (lang != null) {
+          // spit the likes of en_NZ.UTF-8
+          String[] components = lang.split("\\.");
+          String[] countryLang = components[0].split("_");
+          if (countryLang.length > 1) {
+            return new Locale(countryLang[0], countryLang[1]);
+          } else {
+            return new Locale(countryLang[0]);
+          }
+        }
+      }
+    }
+    return null;
   }
 
 }

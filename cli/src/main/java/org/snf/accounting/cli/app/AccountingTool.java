@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import org.snf.accounting.cli.CliServices;
 import org.snf.accounting.cli.app.config.AppConfiguration;
 import org.snf.accounting.cli.app.impl.AppServices;
+import org.snf.accounting.dao.mybatis.MyBatisDaos;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -41,8 +42,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @author matt
  * @version 1.0
  */
-@SpringBootApplication(
-    scanBasePackageClasses = { AppConfiguration.class, AppServices.class, CliServices.class })
+@SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class,
+    CliServices.class, MyBatisDaos.class })
 @EnableAsync
 @EnableScheduling
 public class AccountingTool {
