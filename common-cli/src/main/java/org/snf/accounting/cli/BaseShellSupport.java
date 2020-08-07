@@ -478,7 +478,7 @@ public class BaseShellSupport extends BaseMessageSourceSupport {
    */
   public Availability adminAvailability() {
     if (!shell.checkAuthorities(singletonList("ADMIN"))) {
-      return Availability.unavailable("Not authorized to execute that command.");
+      return Availability.unavailable("you are not authorized to execute that command");
     }
     return Availability.available();
   }
