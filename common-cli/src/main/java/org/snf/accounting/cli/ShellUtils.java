@@ -22,6 +22,12 @@
 
 package org.snf.accounting.cli;
 
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
+
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.SignStyle;
 import java.util.Locale;
 import java.util.Map;
 
@@ -43,6 +49,15 @@ public class ShellUtils {
 
   /** A default maximum width of shell output, i.e. for wrapping. */
   public static final int SHELL_MAX_COLS = 80;
+
+  // @formatter:off
+  /** A date formatter for YYYY-MM style months. */
+  public static final DateTimeFormatter ISO_MONTH = new DateTimeFormatterBuilder()
+      .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+      .appendLiteral('-')
+      .appendValue(MONTH_OF_YEAR, 2)
+      .toFormatter();
+  // @formatter:off  
 
   /**
    * Color a bold message.

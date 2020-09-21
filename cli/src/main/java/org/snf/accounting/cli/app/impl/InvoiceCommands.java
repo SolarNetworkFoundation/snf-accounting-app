@@ -28,6 +28,7 @@ import static java.util.Arrays.asList;
 import static net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem.DEFAULT_ITEM_ORDER;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
 import static org.snf.accounting.cli.ResultPaginationCommands.setNavigationHandler;
+import static org.snf.accounting.cli.ShellUtils.ISO_MONTH;
 import static org.snf.accounting.cli.ShellUtils.getBold;
 
 import java.math.BigDecimal;
@@ -286,7 +287,9 @@ public class InvoiceCommands extends BaseShellSupport {
       t.line(asList(
           inv.getId().getId(),
           invoice.getInvoiceNumber(),
-          ISO_DATE.format(inv.getStartDate()),
+          format("%s (%s)", 
+              ISO_DATE.format(inv.getCreated().atZone(inv.getTimeZone()).toLocalDate()),
+              ISO_MONTH.format(inv.getStartDate())),
           format("%s (%d)", inv.getAddress().getEmail(), inv.getAccountId()),
           inv.getItemCount(),
           formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
