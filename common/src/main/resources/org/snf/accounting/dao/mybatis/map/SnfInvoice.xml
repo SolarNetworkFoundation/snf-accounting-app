@@ -87,6 +87,9 @@
       SELECT SUM(pay.amount) AS paid_amount
       FROM solarbill.bill_invoice_payment pay
       WHERE pay.inv_id = inv.id
+      <if test="unpaidAtDate != null">
+         AND pay.created &lt; #{unpaidAtDate,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+      </if>
       ) pay ON TRUE
     <if test="unpaidOnly and (offset == null or max == null)">
       INNER JOIN LATERAL (
@@ -94,11 +97,17 @@
           SELECT SUM(ipay1.amount) AS paid
           FROM solarbill.bill_invoice_payment ipay1
           WHERE ipay1.inv_id = inv.id AND ipay1.acct_id = inv.acct_id
+          <if test="unpaidAtDate != null">
+            AND ipay1.created &lt; #{unpaidAtDate,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+          </if>
         )
         , bill AS (
           SELECT SUM(invi1.amount) AS bill
           FROM solarbill.bill_invoice_item invi1 
           WHERE invi1.inv_id = inv.id
+          <if test="unpaidAtDate != null">
+            AND invi1.created &lt; #{unpaidAtDate,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+          </if>
         )
         SELECT inv.id AS inv_id
         FROM paid, bill
@@ -121,6 +130,9 @@
                   SELECT SUM(ipay1.amount) AS paid
                   FROM solarbill.bill_invoice_payment ipay1
                   WHERE ipay1.inv_id = inv.id AND ipay1.acct_id = inv.acct_id
+                  <if test="unpaidAtDate != null">
+                    AND ipay1.created &lt; #{unpaidAtDate,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+                  </if>
                 )
                 , bill AS (
                   SELECT SUM(invi1.amount) AS bill
@@ -142,12 +154,19 @@
               <if test="accountId != null">
                 AND inv1.acct_id = #{accountId}
               </if>
-              <if test="startDate != null">
-                AND inv1.date_start &gt;= #{startDate,javaType=java.time.LocalDate,jdbcType=DATE}
-              </if>
-              <if test="endDate != null">
-                AND inv1.date_start &lt; #{endDate,javaType=java.time.LocalDate,jdbcType=DATE}
-              </if>
+              <choose>
+                <when test="unpaidAtDate != null">
+                  AND inv1.date_start &lt; #{unpaidAtDate,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+                </when>
+                <otherwise>
+                  <if test="startDate != null">
+                    AND inv1.date_start &gt;= #{startDate,javaType=java.time.LocalDate,jdbcType=DATE}
+                  </if>
+                  <if test="endDate != null">
+                    AND inv1.date_start &lt; #{endDate,javaType=java.time.LocalDate,jdbcType=DATE}
+                  </if>
+                </otherwise>
+              </choose>
             </where>
             ORDER BY
             <choose>
@@ -176,12 +195,19 @@
           <if test="accountId != null">
             AND inv.acct_id = #{accountId}
           </if>
-          <if test="startDate != null">
-            AND inv.date_start &gt;= #{startDate,javaType=java.time.LocalDate,jdbcType=DATE}
-          </if>
-          <if test="endDate != null">
-            AND inv.date_start &lt; #{endDate,javaType=java.time.LocalDate,jdbcType=DATE}
-          </if>
+          <choose>
+            <when test="unpaidAtDate != null">
+              AND inv.date_start &lt; #{unpaidAtDate,javaType=java.time.Instant,jdbcType=TIMESTAMP}
+            </when>
+            <otherwise>
+              <if test="startDate != null">
+                AND inv.date_start &gt;= #{startDate,javaType=java.time.LocalDate,jdbcType=DATE}
+              </if>
+              <if test="endDate != null">
+                AND inv.date_start &lt; #{endDate,javaType=java.time.LocalDate,jdbcType=DATE}
+              </if>
+            </otherwise>
+          </choose>
         </otherwise>
       </choose>
     </where>
@@ -200,6 +226,7 @@
       <when test="sorts != null and sorts.size &gt; 0">
          <foreach collection="sorts" item="item" separator=",">
           <if test="item.sortKey == &quot;ACCOUNT&quot;">bill_invoice_acct_id</if>
+          <if test="item.sortKey == &quot;CREATED&quot;">bill_invoice_created</if>
           <if test="item.sortKey == &quot;DATE&quot;">bill_invoice_date_start</if>
           <if test="item.sortKey == &quot;ID&quot;">bill_invoice_id</if>
           <if test="item.descending">DESC</if>
