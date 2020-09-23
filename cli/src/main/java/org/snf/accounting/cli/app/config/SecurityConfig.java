@@ -22,7 +22,20 @@
 
 package org.snf.accounting.cli.app.config;
 
+import java.net.InetAddress;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ExpiryPolicyBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.jsr107.Eh107Configuration;
 import org.snf.accounting.impl.SimpleUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,6 +67,9 @@ public class SecurityConfig {
 
   @Value("${app.auth.password-file:classpath:default-passwords.txt}")
   private String passwordFile = "classpath:default-passwords.txt";
+
+  @Autowired
+  public CacheManager cacheManager;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -89,5 +105,23 @@ public class SecurityConfig {
     p.setPasswordEncoder(passwordEncoder());
     return new ProviderManager(p);
   }
+
+  @Bean
+  @Qualifier("brute-force-deny-list")
+  public Cache<InetAddress, Byte> bruteForceDenyListCache() {
+    return cacheManager.createCache("brute-force-deny-list",
+        bruteForceDenyListCacheConfiguration());
+  }
+
+  // CHECKSTYLE OFF: LineLength
+  private javax.cache.configuration.Configuration<InetAddress, Byte> bruteForceDenyListCacheConfiguration() {
+    CacheConfiguration<InetAddress, Byte> conf = CacheConfigurationBuilder
+        .newCacheConfigurationBuilder(InetAddress.class, Byte.class,
+            ResourcePoolsBuilder.heap(5000).disk(100, MemoryUnit.MB, true))
+        .withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(java.time.Duration.ofHours(24)))
+        .build();
+    return Eh107Configuration.fromEhcacheCacheConfiguration(conf);
+  }
+  // CHECKSTYLE ON: LineLength
 
 }

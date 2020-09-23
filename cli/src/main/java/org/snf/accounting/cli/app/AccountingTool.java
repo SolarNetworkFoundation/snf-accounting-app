@@ -42,8 +42,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @author matt
  * @version 1.0
  */
-@SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class,
-    CliServices.class, MyBatisDaos.class })
+@SpringBootApplication(
+    scanBasePackageClasses = { AppConfiguration.class, AppServices.class, CliServices.class,
+        MyBatisDaos.class },
+    exclude = { com.github.fonimus.ssh.shell.SshShellAutoConfiguration.class })
 @EnableAsync
 @EnableScheduling
 public class AccountingTool {

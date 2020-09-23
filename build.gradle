@@ -68,7 +68,7 @@ subprojects {
         postgresJdbcVersion = '42.2.14'
         slf4jVersion = '1.7.30'
         snfBillingVersion = '1.0.3'
-        sshShellVersion = '1.3.0'
+        sshShellVersion = '1.4.2'
         wordWrapVersion = '0.1.6'
 
         libraries = [
