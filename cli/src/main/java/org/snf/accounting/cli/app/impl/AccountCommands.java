@@ -135,6 +135,7 @@ public class AccountCommands extends BaseShellSupport {
         .column("Time Zone")
         .column("Charged")
         .column("Paid")
+        .column("Credit")
         .column("Balance")
         ;
     Locale locale = Locale.forLanguageTag("en-NZ");
@@ -151,8 +152,12 @@ public class AccountCommands extends BaseShellSupport {
           formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
               account.getAccount().getCurrencyCode(), account.getBalance().getPaymentTotal()),
           formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
-              account.getAccount().getCurrencyCode(), account.getBalance().getPaymentTotal()
-              .subtract(account.getBalance().getChargeTotal()))
+              account.getAccount().getCurrencyCode(), account.getBalance().getAvailableCredit()),
+          formattedMoneyAmountFormatWithSymbolCurrencyStyle(locale, 
+              account.getAccount().getCurrencyCode(), 
+              account.getBalance().getPaymentTotal()
+                .subtract(account.getBalance().getChargeTotal())
+                .add(account.getBalance().getAvailableCredit()))
           ));
     }
     shell.print(shell.renderTable(buildTable(t.build(), new IntFunction<Iterable<Aligner>>() {

@@ -1,7 +1,7 @@
 /* ==================================================================
- * MyBatisSnfInvoiceItemDao.java - 21/07/2020 3:27:15 PM
+ * MyBatisInvoiceItemDao.java - 24/08/2021 4:23:58 PM
  * 
- * Copyright 2020 SolarNetwork Foundation
+ * Copyright 2021 SolarNetwork Foundation
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -24,24 +24,35 @@ package org.snf.accounting.dao.mybatis;
 
 import java.util.UUID;
 
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
 import net.solarnetwork.central.dao.mybatis.support.BaseMyBatisGenericDaoSupport;
+import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceItemDao;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem;
 
 /**
- * MyBatis implementation of {@link SnfInvoiceItemDao}.
+ * MyBatis implementation of {@link SnfInvoiceDao}.
  * 
  * @author matt
  * @version 1.0
  */
-public class MyBatisSnfInvoiceItemDao extends BaseMyBatisGenericDaoSupport<SnfInvoiceItem, UUID>
+@Repository
+public class MyBatisInvoiceItemDao extends BaseMyBatisGenericDaoSupport<SnfInvoiceItem, UUID>
     implements SnfInvoiceItemDao {
 
   /**
    * Constructor.
+   * 
+   * @param template
+   *          the template
    */
-  public MyBatisSnfInvoiceItemDao() {
+  @Autowired
+  public MyBatisInvoiceItemDao(SqlSessionTemplate template) {
     super(SnfInvoiceItem.class, UUID.class);
+    setSqlSessionTemplate(template);
   }
 
 }

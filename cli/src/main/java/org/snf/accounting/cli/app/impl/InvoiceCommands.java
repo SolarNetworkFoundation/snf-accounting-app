@@ -24,6 +24,7 @@ package org.snf.accounting.cli.app.impl;
 
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem.DEFAULT_ITEM_ORDER;
 import static net.solarnetwork.javax.money.MoneyUtils.formattedMoneyAmountFormatWithSymbolCurrencyStyle;
@@ -34,6 +35,7 @@ import static org.snf.accounting.cli.ShellUtils.getBold;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
@@ -66,6 +68,7 @@ import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao.InvoiceSortKey;
+import net.solarnetwork.central.user.billing.snf.domain.Account;
 import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
@@ -227,6 +230,10 @@ public class InvoiceCommands extends BaseShellSupport {
     if (inv == null) {
       shell.printError(format("Invoice %d not found.", invoiceId));
     }
+    renderInvoice(inv);
+  }
+
+  private void renderInvoice(SnfInvoiceWithBalance inv) {
     Locale locale = actorLocale();
     NumberFormat numFormat = DecimalFormat.getNumberInstance(locale);
     InvoiceImpl invoice = new InvoiceImpl(inv);
@@ -506,6 +513,59 @@ public class InvoiceCommands extends BaseShellSupport {
       AccountTask task = accountService.createInvoiceDeliverTask(invoiceId);
       if (task != null) {
         shell.printSuccess(format("Created invoice deliver task %s", task.getId()));
+      }
+    } catch (DataAccessException e) {
+      shell.printError(e.getMessage());
+    }
+  }
+
+  /**
+   * Create a new credit invoice.
+   * 
+   * @param accountId
+   *          the account ID
+   * @param amount
+   *          the credit amount
+   * @param creditDate
+   *          the date for the credit, or {@literal null} for the current date
+   * @param description
+   *          an optional description
+   */
+  @ShellMethod("Create a new credit invoice for an account.")
+  @org.springframework.shell.standard.ShellMethodAvailability("adminAvailability")
+  public void creditAdd(@ShellOption(help = "The account ID to add credit to.") Long accountId,
+      @ShellOption(help = "The credit amount.") BigDecimal amount,
+      @ShellOption(help = "The credit date, or omit for the current date (YYYY-MM-DD).",
+          defaultValue = "") String creditDate,
+      @ShellOption(help = "A message to save with the payment.",
+          defaultValue = "") String description) {
+    Account account;
+    try {
+      account = accountService.getAccount(accountId);
+    } catch (DataAccessException e) {
+      shell.printError(i18n("answer.error.accountNotFound", "Account {0} not found.", accountId));
+      return;
+    }
+
+    Instant ts;
+    if (creditDate != null && !creditDate.isEmpty()) {
+      try {
+        ts = LocalDate.parse(creditDate, ISO_LOCAL_DATE).atStartOfDay().plusHours(12)
+            .atZone(account.getTimeZone()).toInstant();
+      } catch (DateTimeParseException e) {
+        shell.printError(
+            i18n("Invalid payment date. Please specify as YYYY-MM-DD format.", "Bad date."));
+        return;
+      }
+    } else {
+      ts = Instant.now();
+    }
+
+    try {
+      SnfInvoiceWithBalance inv = accountService.addCredit(accountId, amount, ts, description);
+      if (inv != null) {
+        shell.printSuccess(format("Created credit invoice %d", inv.getId().getId()));
+        renderInvoice(inv);
       }
     } catch (DataAccessException e) {
       shell.printError(e.getMessage());

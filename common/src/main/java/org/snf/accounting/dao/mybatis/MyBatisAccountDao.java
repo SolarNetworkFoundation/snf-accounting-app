@@ -22,7 +22,10 @@
 
 package org.snf.accounting.dao.mybatis;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.mybatis.spring.SqlSessionTemplate;
 import org.snf.accounting.dao.AccountDao;
@@ -43,7 +46,7 @@ import net.solarnetwork.domain.SortDescriptor;
  * JDBC implementation of {@code AccountDao}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @Repository
 public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, UserLongPK>
@@ -51,6 +54,8 @@ public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, Use
 
   /** Query name enumeration. */
   public enum QueryName {
+
+    AddCredit("add-AccountBalance-credit"),
 
     FindFilteredBalance("find-AccountWithBalance-for-filter"),
 
@@ -131,6 +136,19 @@ public class MyBatisAccountDao extends BaseMyBatisGenericDaoSupport<Account, Use
   @Override
   public void saveTask(AccountTask task) {
     getSqlSessionTemplate().insert(QueryName.SaveTask.getQueryName(), task);
+  }
+
+  @Override
+  public void addCredit(Long accountId, BigDecimal amount) {
+    BigDecimal creditAmount = amount;
+    if (amount.compareTo(BigDecimal.ZERO) < 0) {
+      // credit amount stored as positive value (unlike in invoices where appears as negative)
+      creditAmount = amount.negate();
+    }
+    Map<String, Object> params = new HashMap<>(2);
+    params.put("accountId", accountId);
+    params.put("amount", creditAmount);
+    getSqlSession().insert(QueryName.AddCredit.getQueryName(), params);
   }
 
 }

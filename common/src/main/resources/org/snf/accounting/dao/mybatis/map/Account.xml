@@ -134,6 +134,18 @@
         )
   </select>
   
+  <insert id="add-AccountBalance-credit" parameterType="map">
+    INSERT INTO solarbill.bill_account_balance (acct_id, charge_total, payment_total, avail_credit)
+    VALUES (
+      #{accountId,javaType=long,jdbcType=BIGINT}
+      , 0
+      , 0
+      , #{amount,javaType=java.math.BigDecimal,jdbcType=NUMERIC}
+    )
+    ON CONFLICT (acct_id) DO UPDATE 
+      SET avail_credit = solarbill.bill_account_balance.avail_credit + EXCLUDED.avail_credit
+  </insert>
+  
   <sql id="find-AccountWithBalance-for-filter-body">
     FROM
       solarbill.bill_account acct

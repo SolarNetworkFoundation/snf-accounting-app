@@ -22,6 +22,7 @@
 
 package org.snf.accounting.dao;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.snf.accounting.domain.AccountFilter;
@@ -38,7 +39,7 @@ import net.solarnetwork.domain.SortDescriptor;
  * DAO API for accounts.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface AccountDao extends GenericDao<Account, UserLongPK> {
 
@@ -65,5 +66,15 @@ public interface AccountDao extends GenericDao<Account, UserLongPK> {
    *          the task to save
    */
   void saveTask(AccountTask task);
+
+  /**
+   * Add a credit amount to an account's balance.
+   * 
+   * @param accountId
+   *          the account ID to add credit to
+   * @param amount
+   *          the amount of credit to add
+   */
+  void addCredit(Long accountId, BigDecimal amount);
 
 }

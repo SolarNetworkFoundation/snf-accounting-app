@@ -31,9 +31,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.snf.accounting.dao.AccountDao;
 import org.snf.accounting.dao.AddressDao;
@@ -51,13 +53,17 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceDao;
+import net.solarnetwork.central.user.billing.snf.dao.SnfInvoiceItemDao;
 import net.solarnetwork.central.user.billing.snf.domain.Account;
+import net.solarnetwork.central.user.billing.snf.domain.AccountBalance;
 import net.solarnetwork.central.user.billing.snf.domain.AccountTask;
 import net.solarnetwork.central.user.billing.snf.domain.InvoiceImpl;
+import net.solarnetwork.central.user.billing.snf.domain.InvoiceItemType;
 import net.solarnetwork.central.user.billing.snf.domain.Payment;
 import net.solarnetwork.central.user.billing.snf.domain.PaymentFilter;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoice;
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
+import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceItem;
 import net.solarnetwork.central.user.domain.UserLongPK;
 import net.solarnetwork.central.user.domain.UserUuidPK;
 import net.solarnetwork.dao.FilterResults;
@@ -66,7 +72,7 @@ import net.solarnetwork.dao.FilterResults;
  * Default implementation of {@link AccountService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @Service
 public class DefaultAccountService implements AccountService {
@@ -75,6 +81,7 @@ public class DefaultAccountService implements AccountService {
   private final AddressDao addressDao;
   private final AccountDao accountDao;
   private final SnfInvoiceDao invoiceDao;
+  private final SnfInvoiceItemDao invoiceItemDao;
   private final PaymentDao paymentDao;
 
   /**
@@ -86,16 +93,19 @@ public class DefaultAccountService implements AccountService {
    *          the account DAO
    * @param invoiceDao
    *          the invoice DAO
+   * @param invoiceItemDao
+   *          the item DAO
    * @param paymentDao
    *          the payment DAO
    */
   @Autowired
   public DefaultAccountService(AddressDao addressDao, AccountDao accountDao,
-      SnfInvoiceDao invoiceDao, PaymentDao paymentDao) {
+      SnfInvoiceDao invoiceDao, SnfInvoiceItemDao invoiceItemDao, PaymentDao paymentDao) {
     super();
     this.addressDao = addressDao;
     this.accountDao = accountDao;
     this.invoiceDao = invoiceDao;
+    this.invoiceItemDao = invoiceItemDao;
     this.paymentDao = paymentDao;
   }
 
@@ -195,6 +205,38 @@ public class DefaultAccountService implements AccountService {
     payment.setReference(ref);
     payment.setExternalKey(externalKey);
     return paymentDao.addPayment(payment, invoiceIds);
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public SnfInvoiceWithBalance addCredit(Long accountId, BigDecimal amount, Instant creditDate,
+      String description) {
+    Instant now = Instant.now();
+    Account account = getAccount(accountId);
+    SnfInvoice invoice = new SnfInvoice(accountId, account.getUserId(), now);
+    invoice.setAddress(account.getAddress());
+    invoice.setCurrencyCode(account.getCurrencyCode());
+    invoice.setStartDate(creditDate.atZone(account.getTimeZone()).toLocalDate());
+    invoice.setEndDate(creditDate.atZone(account.getTimeZone()).toLocalDate());
+
+    UserLongPK invoiceId = invoiceDao.save(invoice);
+
+    // make sure credit amount is negative
+    BigDecimal creditAmount = amount.compareTo(BigDecimal.ZERO) < 0 ? amount : amount.negate();
+
+    SnfInvoiceItem item = new SnfInvoiceItem(UUID.randomUUID(), invoiceId.getId(), now);
+    item.setAmount(creditAmount);
+    item.setItemType(InvoiceItemType.Credit);
+    item.setKey(AccountBalance.ACCOUNT_CREDIT_KEY + "-add"); // TODO: define as constant
+    item.setQuantity(BigDecimal.ONE);
+    if (description != null && !description.isEmpty()) {
+      item.setMetadata(Collections.singletonMap("description", description));
+    }
+    invoiceItemDao.save(item);
+
+    accountDao.addCredit(accountId, creditAmount.negate());
+
+    return (SnfInvoiceWithBalance) invoiceDao.get(invoice.getId());
   }
 
 }
