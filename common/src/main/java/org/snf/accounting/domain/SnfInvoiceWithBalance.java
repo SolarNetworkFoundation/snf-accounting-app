@@ -36,6 +36,8 @@ import net.solarnetwork.central.user.domain.UserLongPK;
  */
 public class SnfInvoiceWithBalance extends SnfInvoice {
 
+  private static final long serialVersionUID = 2434501509560277928L;
+
   private BigDecimal paidAmount = BigDecimal.ZERO;
 
   /**
