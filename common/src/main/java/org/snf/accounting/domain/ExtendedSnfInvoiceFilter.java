@@ -22,6 +22,8 @@
 
 package org.snf.accounting.domain;
 
+import java.time.Instant;
+
 import net.solarnetwork.central.user.billing.snf.domain.SnfInvoiceFilter;
 
 /**
@@ -56,10 +58,11 @@ public class ExtendedSnfInvoiceFilter extends SnfInvoiceFilter {
   }
 
   private Long[] invoiceIds;
+  private Instant unpaidAtDate;
 
   @Override
-  public SnfInvoiceFilter clone() {
-    return super.clone();
+  public ExtendedSnfInvoiceFilter clone() {
+    return (ExtendedSnfInvoiceFilter) super.clone();
   }
 
   /**
@@ -79,6 +82,25 @@ public class ExtendedSnfInvoiceFilter extends SnfInvoiceFilter {
    */
   public void setInvoiceIds(Long[] invoiceIds) {
     this.invoiceIds = invoiceIds;
+  }
+
+  /**
+   * Get the unpaid at date.
+   * 
+   * @return the unpaid at date
+   */
+  public Instant getUnpaidAtDate() {
+    return unpaidAtDate;
+  }
+
+  /**
+   * Set the unpaid at date.
+   * 
+   * @param unpaidAtDate
+   *          the date
+   */
+  public void setUnpaidAtDate(Instant unpaidAtDate) {
+    this.unpaidAtDate = unpaidAtDate;
   }
 
 }

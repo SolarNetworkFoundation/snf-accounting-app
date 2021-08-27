@@ -44,7 +44,7 @@ import net.solarnetwork.dao.FilterResults;
  * Service for dealing with accounts.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface AccountService {
 
@@ -141,5 +141,26 @@ public interface AccountService {
    */
   PaymentWithInvoicePayments addPayment(Long accountId, Set<Long> invoiceIds, BigDecimal amount,
       Instant paymentDate, String ref, String externalKey);
+
+  /**
+   * Add a new credit to an account.
+   * 
+   * <p>
+   * This will generate a new invoice with a single credit item included.
+   * </p>
+   * 
+   * @param accountId
+   *          the account ID
+   * @param amount
+   *          the credit amount
+   * @param creditDate
+   *          the credit date
+   * @param description
+   *          an optional message to attach to the credit item
+   * @return the newly created invoice
+   * @since 1.1
+   */
+  SnfInvoiceWithBalance addCredit(Long accountId, BigDecimal amount, Instant creditDate,
+      String description);
 
 }

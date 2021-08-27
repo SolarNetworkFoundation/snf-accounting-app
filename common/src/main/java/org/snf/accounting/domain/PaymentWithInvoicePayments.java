@@ -39,6 +39,8 @@ import net.solarnetwork.central.user.domain.UserUuidPK;
  */
 public class PaymentWithInvoicePayments extends Payment {
 
+  private static final long serialVersionUID = 3023440128831208563L;
+
   private Account account;
   private Set<InvoicePayment> invoicePayments;
 

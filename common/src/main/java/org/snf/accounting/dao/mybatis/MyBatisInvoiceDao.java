@@ -105,7 +105,10 @@ public class MyBatisInvoiceDao extends BaseMyBatisGenericDaoSupport<SnfInvoice, 
       }
     }
 
-    final ExtendedSnfInvoiceFilter extFilter = ExtendedSnfInvoiceFilter.forFilter(filter);
+    final ExtendedSnfInvoiceFilter extFilter = ExtendedSnfInvoiceFilter.forFilter(filter).clone();
+    if (extFilter.getUnpaidAtDate() != null) {
+      extFilter.setUnpaidOnly(true);
+    }
 
     // attempt count first, if max NOT specified as -1 and NOT a mostRecent query
     Long totalCount = null;
