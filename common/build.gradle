@@ -46,7 +46,7 @@ dependencies {
 	implementation 'org.springframework:spring-tx'
 	
 	// DB
-	runtime "org.postgresql:postgresql:${postgresJdbcVersion}"
+	runtimeOnly "org.postgresql:postgresql:${postgresJdbcVersion}"
 
 	// JSON
 	implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
